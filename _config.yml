@@ -1,10 +1,10 @@
 # Site settings
-title:       syyyipe_pixyll
+title:       syyyipe's private note
 email:       syyyipe@gmail.com
 author:      syyyipe
-description: "A simple, beautiful theme for Jekyll that emphasizes content rather than aesthetic fluff."
+description: "private note"
 baseurl:     ""
-url:         "https://pixyll.com"
+url:         "https://syyyipe.github.io"
 date_format: "%b %-d, %Y"
 header_pages:
  - about.md
@@ -20,7 +20,7 @@ google_tag_manager:
 bing_verification:
 
 # Optional features
-animated:             false
+animated:             true
 show_related_posts:   false
 show_post_footers:    false
 show_social_icons:    false
