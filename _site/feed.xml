@@ -7,6 +7,149 @@
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
     
       <item>
+        <title>CVE-2021-4102</title>
+        <description>&lt;p&gt;&lt;a href=&quot;https://chromereleases.googleblog.com/2021/12/stable-channel-update-for-desktop_13.html&quot;&gt;https://chromereleases.googleblog.com/2021/12/stable-channel-update-for-desktop_13.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;[$TBD][&lt;a href=&quot;https://crbug.com/1278387&quot;&gt;1278387&lt;/a&gt;] High CVE-2021-4102: Use after free in V8. Reported by Anonymous on 2021-12-09&lt;/p&gt;
+
+&lt;p&gt;Google is aware of reports that an exploit for CVE-2021-4102 exists &lt;strong&gt;&lt;em&gt;in the wild&lt;/em&gt;&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://chromium.googlesource.com/v8/v8/+/4fae8b16802a416fe3aab0e7792fabe96cf1ecd8&quot;&gt;https://chromium.googlesource.com/v8/v8/+/4fae8b16802a416fe3aab0e7792fabe96cf1ecd8&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[compiler] Don't elide ChangeTaggedToInt32-&amp;gt;ChangeInt31ToTaggedSigned
+
+Bug: chromium:1278387
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;author	Leszek Swirski &lt;a href=&quot;mailto:leszeks@chromium.org&quot;&gt;leszeks@chromium.org&lt;/a&gt;	Fri Dec 10 14:56:05 2021&lt;/p&gt;
+
+&lt;h2 id=&quot;분석-전략&quot;&gt;분석 전략&lt;/h2&gt;
+
+&lt;p&gt;poc 없음, 분석 포스팅 없음, 정보가 전무함. 
+패치도 딸랑 한 줄이 전부고 패치에 대한 커맨트도 없음.&lt;/p&gt;
+
+&lt;p&gt;내가 이것을 익스플로잇 할 수 있을지… 솔직히 자신 없음.&lt;/p&gt;
+
+&lt;p&gt;다만, 패치된 곳의 코드가 트리거되도록 하는 코드만이라도 짜보는 것이 목표.
+그리고, 그 주변의 코드를 학습하고 그 내용을 잊지 않도록 정리해보자.&lt;/p&gt;
+
+&lt;h2 id=&quot;사전-작업&quot;&gt;사전 작업&lt;/h2&gt;
+
+&lt;p&gt;최신버전이 아닌, 구버전을 분석하는 작업이다 보니 cs chromium 을 이용하기 보다는, 직접 로컬에 코드를 두고 직접 빌드하고 vscode+clangd를 이용한 분석을 선호한다.&lt;/p&gt;
+
+&lt;p&gt;9.6 버전을 선택하였으며 &lt;a href=&quot;https://chromium.googlesource.com/v8/v8/+log/refs/heads/9.6-lkgr&quot;&gt;https://chromium.googlesource.com/v8/v8/+log/refs/heads/9.6-lkgr&lt;/a&gt;을 보고 9.6.180.20 버전을 선택.&lt;/p&gt;
+
+&lt;p&gt;clangd가 정상동작하지 않아서 삽질을 조금 하였음. 해결한 방법은 v8 빌드시 사용되는 clang 버전을 확인하고 이에 맞는 clangd를 받아서 설치하여 연동하도록 하였음. 자세한 내용은 슬랙 참고.&lt;/p&gt;
+
+&lt;p&gt;패치는 &lt;strong&gt;simplified-operator-reducer.cc&lt;/strong&gt;에서 이루어졌으며 &lt;strong&gt;simplified-operator-reducer-unittest.cc&lt;/strong&gt; 파일이 존재하는 것을 보고 unittest를 한 번 잠깐 살펴보았음.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/2022-01-07_16:05:45.png&quot; alt=&quot;unittests&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;test&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;asdf
+asdf
+asdf&lt;/p&gt;
+
+  &lt;p&gt;asdf&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-cpp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+&lt;span class=&quot;c1&quot;&gt;// Hello!&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;test-sharp&quot;&gt;test sharp&lt;/h2&gt;
+
+&lt;h3 id=&quot;test-sharp-1&quot;&gt;test sharp&lt;/h3&gt;
+
+&lt;p&gt;The following is an overview to copying and sharing Pixyll.&lt;sup id=&quot;fnref:1&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:1&quot; class=&quot;footnote&quot; rel=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;p&gt;Most people have an understanding of what the copyright and licensing obligations are for source code, but not everyone has practical experience.  There is a lot of information about how to use free and open source source code generally, but not necessarily how it works specifically.&lt;/p&gt;
+
+&lt;h2 id=&quot;basics&quot;&gt;Basics&lt;/h2&gt;
+
+&lt;p&gt;Pixyll is free and open source software under the MIT license, a &lt;em&gt;permissive license&lt;/em&gt;.  You can use Pixyll without charge and it is provided to you, “as is”, without warranty of any kind.&lt;/p&gt;
+
+&lt;p&gt;These are some of the rights for Pixyll since it is under the MIT license:&lt;sup id=&quot;fnref:2&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:2&quot; class=&quot;footnote&quot; rel=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;You can &lt;strong&gt;copy&lt;/strong&gt; Pixyll by forking it on GitHub or by any other means of copying.&lt;/li&gt;
+  &lt;li&gt;You can &lt;strong&gt;use&lt;/strong&gt; Pixyll to publish your site without restriction or limitation.&lt;/li&gt;
+  &lt;li&gt;You can &lt;strong&gt;change&lt;/strong&gt; Pixyll as you wish, and you can publish your site with a modified version of Pixyll.&lt;/li&gt;
+  &lt;li&gt;You can also &lt;strong&gt;distribute&lt;/strong&gt; copies of Pixyll to other people.&lt;/li&gt;
+  &lt;li&gt;You can also &lt;strong&gt;distribute modified&lt;/strong&gt; copies of Pixyll.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Other rights you have of Pixyll under the MIT license:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;You can &lt;strong&gt;sell&lt;/strong&gt; copies of Pixyll, including copies you have modified.&lt;/li&gt;
+  &lt;li&gt;You can &lt;strong&gt;combine&lt;/strong&gt; Pixyll with other works that are under the MIT license, or other permissive licenses, a copyleft license or a proprietary license.  Pixyll already does this itself by using Jekyll, Ruby and other dependencies.&lt;/li&gt;
+  &lt;li&gt;You can distribute copies of Pixyll to others under either the MIT license or you can &lt;strong&gt;relicense&lt;/strong&gt; Pixyll under another license.  This includes a different permissive license, a copyleft license or a proprietary license.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Your only responsibility is to preserve both the copyright notices of Pixyll and the MIT license in your copy or modified work.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-to&quot;&gt;How to&lt;/h2&gt;
+
+&lt;p&gt;If you’ve modified Pixyll significantly and want to share your version, especially public copies of the code, then there are a few items you should do.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;You should probably &lt;strong&gt;rename&lt;/strong&gt; your fork of Pixyll with a different name.&lt;/li&gt;
+  &lt;li&gt;A new name isn’t required by the MIT license, but it is good etiquette.&lt;sup id=&quot;fnref:3&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:3&quot; class=&quot;footnote&quot; rel=&quot;footnote&quot;&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+  &lt;li&gt;You should add your name to the &lt;strong&gt;copyright&lt;/strong&gt; of your version, and you should preserve the existing copyrights of Pixyll.&lt;/li&gt;
+  &lt;li&gt;Maintaining the copyright notices isn’t required of the MIT license, but it is suggested by the license and is a good practice for documenting the copyrights of your derived work.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The items above do not apply when you just copied and modified Pixyll in small ways to just publish your site and you have no plans to fork Pixyll under a different name.&lt;/p&gt;
+
+&lt;p&gt;If you want to publish a fork of Pixyll under a different name but keeping it under the MIT license, then you should add your name to the copyright notices:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Copyright (c) 2021 Your Name
+Copyright (c) 2014-2021 John Otander for Pixyll
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;However, if you want to publish a fork of Pixyll under a different name &lt;em&gt;and&lt;/em&gt; a different license, then you should should still add your name to the copyright notices but have a section titled “Pixyll” at the bottom of your LICENSE file that preserves the copyright and license notices for Pixyll:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Pixyll
+
+Copyright (c) 2014-2021 John Otander
+
+MIT License
+
+Permission is hereby granted, [...]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;If you are just modifying Pixyll in small ways to customize your site, you are not obligated to maintain the copyright notices of Pixyll on your site.  However, if you want to credit the Pixyll theme that would be appreciated, see section on “Pixyll Plug” in the README file that came with Pixyll.&lt;/p&gt;
+
+&lt;p&gt;Thanks for using Pixyll, and happy hacking!&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;div class=&quot;footnotes&quot; role=&quot;doc-endnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:1&quot; role=&quot;doc-endnote&quot;&gt;
+      &lt;p&gt;&lt;strong&gt;Disclaimer&lt;/strong&gt;: This material is for informational purposes only, and should not be construed as legal advice or opinion.  For actual legal advice, you should consult with professional legal services. &lt;a href=&quot;#fnref:1&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:2&quot; role=&quot;doc-endnote&quot;&gt;
+      &lt;p&gt;This list of privileges are derived from the four freedoms of “The Free Software Definition” published by the GNU project &lt;a href=&quot;https://www.gnu.org/philosophy/free-sw.en.html&quot;&gt;https://www.gnu.org/philosophy/free-sw.en.html&lt;/a&gt;. &lt;a href=&quot;#fnref:2&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:3&quot; role=&quot;doc-endnote&quot;&gt;
+      &lt;p&gt;Using a different name from “Pixyll” for your derivate work helps avoid misdirected questions from people who are using your version.  It’s similar to using version numbers to discrimate the revisions of software when troubleshooting issues. &lt;a href=&quot;#fnref:3&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Fri, 07 Jan 2022 14:46:00 +0900</pubDate>
+        <link>http://localhost:4000/2022/01/07/CVE-2021-4102/</link>
+        <guid isPermaLink="true">http://localhost:4000/2022/01/07/CVE-2021-4102/</guid>
+      </item>
+    
+      <item>
         <title>template template template...</title>
         <description>&lt;h1 id=&quot;test-sharp&quot;&gt;test sharp&lt;/h1&gt;
 
