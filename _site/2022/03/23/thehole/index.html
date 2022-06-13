@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>TheHole &#8211; syyyipe's private note</title>
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="dns-prefetch" href="//maxcdn.bootstrapcdn.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Let's try to leak TheHole">
+    <link rel="manifest" type="application/manifest+json; charset=utf-8" href="/manifest.json" />
+    <meta name="robots" content="noindex, nofollow">
+    
+    <meta name="author" content="syyyipe">
+    
+    <meta name="keywords" content="">
+    <link rel="canonical" href="http://localhost:4000/2022/03/23/thehole/">
+    <link rel="alternate" type="application/rss+xml" title="RSS Feed for syyyipe's private note" href="/feed.xml" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/pixyll.css?202205120836" type="text/css">
+
+    <!-- Fonts -->
+    
+    <link href='//fonts.googleapis.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+    
+    
+
+    <!-- MathJax -->
+    
+
+    <!-- Verifications -->
+    
+    
+
+    <!-- Open Graph -->
+    <!-- From: https://github.com/mmistakes/hpstr-jekyll-theme/blob/master/_includes/head.html -->
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="TheHole">
+    <meta property="og:description" content="private note">
+    <meta property="og:url" content="http://localhost:4000/2022/03/23/thehole/">
+    <meta property="og:site_name" content="syyyipe's private note">
+    
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    
+    <meta name="twitter:title" content="TheHole" />
+    <meta name="twitter:description" content="Let's try to leak TheHole" />
+    <meta name="twitter:url" content="http://localhost:4000/2022/03/23/thehole/" />
+    
+
+    <!-- Icons -->
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" href="/favicon-192x192.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+    <link rel="shortcut icon" href="/favicon.ico">
+
+    
+</head>
+
+<body class="site animated fade-in-down">
+  
+	
+
+  <div class="site-wrap">
+    <header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="/" class="site-title">syyyipe's private note</a>
+      <nav class="site-nav">
+        
+
+
+
+    
+    
+    
+    
+        <a class="nav-link" href="/about/">About Pixyll</a>
+    
+
+    
+
+
+      </nav>
+      <div class="clearfix"></div>
+      
+    </div>
+  </div>
+</header>
+
+
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+        
+
+
+<div class="post-header mb2">
+  <h1>TheHole</h1>
+  <span class="post-meta">Mar 23, 2022</span><br>
+  
+  <span class="post-meta small">
+  
+    22 minute read
+  
+  </span>
+</div>
+
+<article class="post-content">
+  <h2 id="environments">Environments</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>everyyy@baddell:/work/v8/220317_master/v8$ git rev-parse HEAD
+e62f556862624103ea1da5b9dcef9b216832033b
+everyyy@baddell:/work/v8/220317_master/v8$ git describe --contains
+10.1.124~1
+everyyy@baddell:/work/v8/220317_master/v8$
+</code></pre></div></div>
+
+<h2 id="thehole">TheHole</h2>
+
+<p>38003에서 힌트를 얻어서 시작.</p>
+
+<p><strong>src/builtins/builtins-collections-gen.cc</strong> 를 보면 TheHoleConstant() 함수를 통해 TheHole 값을 사용하고 있음. 해당 함수는 <strong>src/codegen/code-stub-assembler.cc</strong> 에서 매크로를 통해 생성된 것.</p>
+
+<p><strong>src/codegen/code-stub-assembler.cc</strong></p>
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define HEAP_CONSTANT_ACCESSOR(rootIndexName, rootAccessorName, name)        \
+  TNode&lt;std::remove_pointer&lt;std::remove_reference&lt;decltype(                  \
+      std::declval&lt;ReadOnlyRoots&gt;().rootAccessorName())&gt;::type&gt;::type&gt;       \
+      CodeStubAssembler::name##Constant() {                                  \
+    return UncheckedCast&lt;std::remove_pointer&lt;std::remove_reference&lt;decltype( \
+        std::declval&lt;ReadOnlyRoots&gt;().rootAccessorName())&gt;::type&gt;::type&gt;(    \
+        LoadRoot(RootIndex::k##rootIndexName));                              \
+  }
+</span><span class="n">HEAP_IMMUTABLE_IMMOVABLE_OBJECT_LIST</span><span class="p">(</span><span class="n">HEAP_CONSTANT_ACCESSOR</span><span class="p">)</span>
+<span class="cp">#undef HEAP_CONSTANT_ACCESSOR
+</span></code></pre></div></div>
+
+<p><strong>src/codegen/code-stub-assembler.h</strong></p>
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define HEAP_IMMUTABLE_IMMOVABLE_OBJECT_LIST(V)                              \
+...
+</span>  <span class="n">V</span><span class="p">(</span><span class="n">TheHoleValue</span><span class="p">,</span> <span class="n">the_hole_value</span><span class="p">,</span> <span class="n">TheHole</span><span class="p">)</span>                                   \
+<span class="p">...</span>
+
+<span class="p">...</span>
+<span class="cp">#define HEAP_IMMOVABLE_OBJECT_LIST(V)   \
+  HEAP_MUTABLE_IMMOVABLE_OBJECT_LIST(V) \
+  HEAP_IMMUTABLE_IMMOVABLE_OBJECT_LIST(V)
+</span></code></pre></div></div>
+
+<p>“TheHole” 과 “the_hole_value” 를 키워드로 소스코드 리파지토리 대상 전체 키워드 검색해서 훑어보기로 하자.</p>
+
+<p>아니면… –background-index=true 옵션 줘서 인덱싱을 다 한듯한데… reference를 찾아서 볼까.</p>
+
+<p>일단 전체적인 감을 잡기 위해 키워드 검색부터 훑어보자.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">heap</span><span class="o">/</span><span class="n">setup</span><span class="o">-</span><span class="n">heap</span><span class="o">-</span><span class="n">internal</span><span class="p">.</span><span class="n">cc</span>
+
+<span class="kt">bool</span> <span class="n">Heap</span><span class="o">::</span><span class="n">CreateInitialMaps</span><span class="p">()</span> <span class="p">{</span>
+                    <span class="p">...</span>
+  <span class="n">set_the_hole_value</span><span class="p">(</span><span class="n">Oddball</span><span class="o">::</span><span class="n">cast</span><span class="p">(</span><span class="n">obj</span><span class="p">));</span>
+  <span class="n">Oddball</span><span class="o">::</span><span class="n">cast</span><span class="p">(</span><span class="n">obj</span><span class="p">).</span><span class="n">set_kind</span><span class="p">(</span><span class="n">Oddball</span><span class="o">::</span><span class="n">kTheHole</span><span class="p">);</span>
+                    <span class="p">...</span>
+
+<span class="kt">void</span> <span class="n">Heap</span><span class="o">::</span><span class="n">CreateInitialObjects</span><span class="p">()</span> <span class="p">{</span>
+                    <span class="p">...</span>
+  <span class="c1">// Initialize the_hole_value.</span>
+  <span class="n">Oddball</span><span class="o">::</span><span class="n">Initialize</span><span class="p">(</span><span class="n">isolate</span><span class="p">(),</span> <span class="n">factory</span><span class="o">-&gt;</span><span class="n">the_hole_value</span><span class="p">(),</span> <span class="s">"hole"</span><span class="p">,</span>
+                      <span class="n">factory</span><span class="o">-&gt;</span><span class="n">hole_nan_value</span><span class="p">(),</span> <span class="s">"undefined"</span><span class="p">,</span>
+                      <span class="n">Oddball</span><span class="o">::</span><span class="n">kTheHole</span><span class="p">);</span>
+                    <span class="p">...</span>
+
+</code></pre></div></div>
+
+<p>TheHole 이 초기화되는 코드인 듯.</p>
+
+<h3 id="thehole이-쓰이는-곳들">TheHole이 쓰이는 곳들</h3>
+
+<p>배열의 빈 element를 나타낼 때</p>
+<ul>
+  <li>이후 이를 접근하는 다양한 코드 패스들에 대해 TheHole을 검증하는 루틴이 존재함</li>
+  <li>TheHole을 검증하지 않고 접근하는 코드 패스가 있는지 찾아 볼 필요가 있음, 이는 (당연하게도) TheHole 키워드 검색으로 발견되지 않으므로 좀 더 수고스러운 코드 분석이 필요할 것으로 생각됨.</li>
+  <li>map, set, weakmap 등 collection 객체에서 삭제된 키(및 값)를 TheHole로 나타냄(src/builtins/builtins-collections-gen.cc)</li>
+  <li>src/builtins/builtins-constructor-gen.cc, prototype(아니면 initial map?)에 TheHole이 쓰여지는 경우가 있는 듯</li>
+  <li>src/builtins/builtins-internal-gen.cc, Dictionary의 경우에도 Delete 시(아마도 property?) TheHole을 씀</li>
+  <li>src/builtins/builtins-internal-gen.cc, TF_BUILTIN(AdaptorWithBuiltinExitFrame), 의미 분석 필요</li>
+  <li>** exception의 pending message가 clear되어 TheHole이 유출될 가능성이 있었던 듯? (src/builtins/builtins-iterator-gen.cc 참고), https://bugs.chromium.org/p/v8/issues/detail?id=12439 요 링크 참고해보자</li>
+  <li>Promise(tq 파일들) 관련 코드들에서도 좀 보임…</li>
+  <li>src/builtins/…/builtins-….cc 에 구현된 로우 레벨 코드에서도 사용되는 경우가 여럿 있으며(RootIndex::kTheHoleValue) 각각 사용되는 경우마다 분석이 필요할 듯. 이는 나중에 분석을 하긴 해야 할 듯. (어려워보임)</li>
+  <li>compiler 에서는 Type::Hole(), OddballType::kHole, jsgraph-&gt;TheHoleConstant() 형태 등으로 사용됨. compiler 에서의 TheHole 사용은 나중에 따로 모아서 정리해보자</li>
+  <li>** scheduled_exception 관련</li>
+  <li>인터프리터에서 BytecodeArrayBuilder&amp; BytecodeArrayBuilder::LoadTheHole() 와 같은 경우에도 쓰임. Interpreter에서 쓰이는 경우도 언젠간 봐야 할지도… 인터프리터 자체에 대한 이해가 필요해서 많이 어려울 듯.</li>
+  <li>maglev(<code class="language-plaintext highlighter-rouge">void MaglevGraphBuilder::VisitLdaTheHole()</code>)</li>
+  <li>src/objects/module.cc, module 관련 코드에서 TheHole여부 체크 루틴이 다수 있음. module을 통해 TheHole leak의 가능성을 고민해봐도 좋을 듯</li>
+  <li>scope_info(SFI, SharedFunctionInfo)에도 에도 TheHole이 들어갈 수 있는 듯</li>
+  <li>class의 super class 등을 나타낼 때 TheHole이 들어갈 수 있는 듯(최상위 클래스의 경우)</li>
+  <li>LookupSlot? Context::Lookup? LoadLookupSlot 을 살펴보자</li>
+  <li>HashTable의 Lookup 결과가 TheHole 일 수 있음</li>
+  <li>wasm</li>
+</ul>
+
+<p>별개로</p>
+<ul>
+  <li>set_the_hole, is_the_hole 과 같이 the_hole 으로도 검색을 해 보아야 할 듯</li>
+  <li>src/objects/objects.cc, PropertyCell 관련, 30632와 연관하여 필요할 경우 보자</li>
+</ul>
+
+<h2 id="thehole-keyward-search">“TheHole” Keyward Search</h2>
+
+<p><strong>include/v8-function-callback.h</strong></p>
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span>
+<span class="n">Local</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span> <span class="n">ReturnValue</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;::</span><span class="n">Get</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="k">using</span> <span class="n">I</span> <span class="o">=</span> <span class="n">internal</span><span class="o">::</span><span class="n">Internals</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">value_</span> <span class="o">==</span> <span class="o">*</span><span class="n">I</span><span class="o">::</span><span class="n">GetRoot</span><span class="p">(</span><span class="n">GetIsolate</span><span class="p">(),</span> <span class="n">I</span><span class="o">::</span><span class="n">kTheHoleValueRootIndex</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Local</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">Undefined</span><span class="p">(</span><span class="n">GetIsolate</span><span class="p">()));</span>
+  <span class="k">return</span> <span class="n">Local</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;::</span><span class="n">New</span><span class="p">(</span><span class="n">GetIsolate</span><span class="p">(),</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">value_</span><span class="p">));</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>위 부분이 TheHole 인 값을 읽으려고 하면 undefined가 획득되도록 한 부분인듯? 테스트해보자.</p>
+
+<p>맞긴 맞는듯 한데, libv8을 가져다 쓰는(즉, embedding하는) 경우를 위한 것인듯. d8 콘솔에서는 트리거되지 않음.</p>
+
+<p>cs 에서 보니 embedding하면서 chromium에서 Get()을 호출하는 경우가 꽤 된다. 이러한 관점으로, TheHole 유출 가능성을 확대해서 chromium 프로젝트까지 훑어 볼 필요도 있을 듯.</p>
+
+<p>Internals::kTheHoleValueRootIndex 가 직접 쓰이는 곳은 위 코드가 유일한 듯.</p>
+
+<hr />
+
+<p>AST에서 TheHole을 나타내기 위해 Literal::kTheHole 을 정의하여 사용함. Literal의 종류는 kSmi, kHeapNumber, kBigInt, kString, kBoolean, kUndefined, kNull, kTheHole.</p>
+
+<p>파싱 후 AST 구축 중에 배열 hole 처리 관련 구문만 있는 듯…</p>
+
+<p><strong>src/ast/ast.cc</strong></p>
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="n">ArrayLiteralBoilerplateBuilder</span><span class="o">::</span><span class="n">InitDepthAndFlags</span><span class="p">()</span> <span class="p">{</span>
+    <span class="p">...</span>
+        <span class="k">switch</span> <span class="p">(</span><span class="n">literal</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">())</span> <span class="p">{</span>
+          <span class="k">case</span> <span class="n">Literal</span><span class="o">::</span><span class="n">kTheHole</span><span class="p">:</span>
+            <span class="n">is_holey</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+            <span class="c1">// The hole is allowed in holey double arrays (and holey Smi</span>
+            <span class="c1">// arrays), so ignore it as far as is_all_number is concerned.</span>
+            <span class="k">break</span><span class="p">;</span>
+    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>TheHole 여부 판단해서 배열의 is_holey 여부 판단함.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>everyyy@baddell:/work/v8/220317_master/v8$ ./out.gn/x64.release/d8
+V8 version 10.1.0 (candidate)
+d8&gt; a = [,,]
+Literal::kTheHole!
+Literal::kTheHole!
+[, ]
+d8&gt; a = [,1]
+Literal::kTheHole!
+[, 1]
+d8&gt; 
+</code></pre></div></div>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">baseline</span><span class="o">/</span><span class="n">baseline</span><span class="o">-</span><span class="n">compiler</span><span class="p">.</span><span class="n">cc</span><span class="o">:</span>
+   <span class="mi">676</span>  
+   <span class="mi">677</span><span class="o">:</span> <span class="kt">void</span> <span class="n">BaselineCompiler</span><span class="o">::</span><span class="n">VisitLdaTheHole</span><span class="p">()</span> <span class="p">{</span>
+   <span class="mi">678</span><span class="o">:</span>   <span class="n">__</span> <span class="n">LoadRoot</span><span class="p">(</span><span class="n">kInterpreterAccumulatorRegister</span><span class="p">,</span> <span class="n">RootIndex</span><span class="o">::</span><span class="n">kTheHoleValue</span><span class="p">);</span>
+   <span class="mi">679</span>  <span class="p">}</span>
+</code></pre></div></div>
+
+<p>LdaTheHole 을 따로 더 봐야할까?</p>
+
+<hr />
+
+<p><strong>src/builtins/accessors.cc</strong></p>
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSObject</span><span class="o">&gt;</span> <span class="n">GetFrameArguments</span><span class="p">(</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span>
+                                   <span class="n">JavaScriptFrameIterator</span><span class="o">*</span> <span class="n">it</span><span class="p">,</span>
+                                   <span class="kt">int</span> <span class="n">function_index</span><span class="p">)</span> <span class="p">{</span>
+    <span class="p">...</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Object</span> <span class="n">value</span> <span class="o">=</span> <span class="n">frame</span><span class="o">-&gt;</span><span class="n">GetParameter</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">value</span><span class="p">.</span><span class="n">IsTheHole</span><span class="p">(</span><span class="n">isolate</span><span class="p">))</span> <span class="p">{</span>
+      <span class="c1">// Generators currently use holes as dummy arguments when resuming.  We</span>
+      <span class="c1">// must not leak those.</span>
+      <span class="n">DCHECK</span><span class="p">(</span><span class="n">IsResumableFunction</span><span class="p">(</span><span class="n">function</span><span class="o">-&gt;</span><span class="n">shared</span><span class="p">().</span><span class="n">kind</span><span class="p">()));</span>
+      <span class="n">value</span> <span class="o">=</span> <span class="n">ReadOnlyRoots</span><span class="p">(</span><span class="n">isolate</span><span class="p">).</span><span class="n">undefined_value</span><span class="p">();</span>
+    <span class="p">}</span>
+    <span class="n">array</span><span class="o">-&gt;</span><span class="n">set</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">value</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">arguments</span><span class="o">-&gt;</span><span class="n">set_elements</span><span class="p">(</span><span class="o">*</span><span class="n">array</span><span class="p">);</span>
+
+  <span class="c1">// Return the freshly allocated arguments object.</span>
+  <span class="k">return</span> <span class="n">arguments</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>arguments를 설정해주는 부분으로 보이며, TheHole argument일 경우 undefined로 바꿔주는 부분인 듯.</p>
+
+<p>그냥 해서는 위 코드가 잘 트리거가 안됨. 주석을 참고하여 generator 같은 것들을 고려해보아야 할지도…</p>
+
+<p>레퍼런스들을 훑어봐도 어디서부터 호출되는 코드인지 감이 안온다. 호출 안되는 코드인가?</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">array</span><span class="o">-</span><span class="n">lastindexof</span><span class="p">.</span><span class="n">tq</span>
+<span class="n">LoadWithHoleCheck</span><span class="o">&lt;</span><span class="n">FixedArray</span><span class="o">&gt;</span><span class="p">(</span><span class="n">implicit</span> <span class="n">context</span><span class="o">:</span> <span class="n">Context</span><span class="p">)(</span>
+    <span class="n">elements</span><span class="o">:</span> <span class="n">FixedArrayBase</span><span class="p">,</span> <span class="n">index</span><span class="o">:</span> <span class="n">Smi</span><span class="p">)</span><span class="o">:</span> <span class="n">JSAny</span>
+    <span class="n">labels</span> <span class="n">IfHole</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">elements</span><span class="o">:</span> <span class="n">FixedArray</span> <span class="o">=</span> <span class="n">UnsafeCast</span><span class="o">&lt;</span><span class="n">FixedArray</span><span class="o">&gt;</span><span class="p">(</span><span class="n">elements</span><span class="p">);</span>
+  <span class="k">const</span> <span class="n">element</span><span class="o">:</span> <span class="n">Object</span> <span class="o">=</span> <span class="n">elements</span><span class="p">.</span><span class="n">objects</span><span class="p">[</span><span class="n">index</span><span class="p">];</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">element</span> <span class="o">==</span> <span class="n">TheHole</span><span class="p">)</span> <span class="k">goto</span> <span class="n">IfHole</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">UnsafeCast</span><span class="o">&lt;</span><span class="n">JSAny</span><span class="o">&gt;</span><span class="p">(</span><span class="n">element</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">LoadWithHoleCheck</span><span class="o">&lt;</span><span class="n">FixedDoubleArray</span><span class="o">&gt;</span><span class="p">(</span><span class="n">implicit</span> <span class="n">context</span><span class="o">:</span> <span class="n">Context</span><span class="p">)(</span>
+    <span class="n">elements</span><span class="o">:</span> <span class="n">FixedArrayBase</span><span class="p">,</span> <span class="n">index</span><span class="o">:</span> <span class="n">Smi</span><span class="p">)</span><span class="o">:</span> <span class="n">JSAny</span>
+    <span class="n">labels</span> <span class="n">IfHole</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">elements</span><span class="o">:</span> <span class="n">FixedDoubleArray</span> <span class="o">=</span> <span class="n">UnsafeCast</span><span class="o">&lt;</span><span class="n">FixedDoubleArray</span><span class="o">&gt;</span><span class="p">(</span><span class="n">elements</span><span class="p">);</span>
+  <span class="k">const</span> <span class="n">element</span><span class="o">:</span> <span class="n">float64</span> <span class="o">=</span> <span class="n">elements</span><span class="p">.</span><span class="n">floats</span><span class="p">[</span><span class="n">index</span><span class="p">].</span><span class="n">Value</span><span class="p">()</span> <span class="n">otherwise</span> <span class="n">IfHole</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">AllocateHeapNumberWithValue</span><span class="p">(</span><span class="n">element</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">macro</span> <span class="n">FastArrayLastIndexOf</span><span class="o">&lt;</span><span class="n">Elements</span> <span class="o">:</span> <span class="n">type</span> <span class="n">extends</span> <span class="n">FixedArrayBase</span><span class="o">&gt;</span><span class="p">(</span>
+    <span class="n">context</span><span class="o">:</span> <span class="n">Context</span><span class="p">,</span> <span class="n">array</span><span class="o">:</span> <span class="n">JSArray</span><span class="p">,</span> <span class="n">from</span><span class="o">:</span> <span class="n">Smi</span><span class="p">,</span> <span class="n">searchElement</span><span class="o">:</span> <span class="n">JSAny</span><span class="p">)</span><span class="o">:</span> <span class="n">Smi</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">elements</span><span class="o">:</span> <span class="n">FixedArrayBase</span> <span class="o">=</span> <span class="n">array</span><span class="p">.</span><span class="n">elements</span><span class="p">;</span>
+  <span class="n">let</span> <span class="n">k</span><span class="o">:</span> <span class="n">Smi</span> <span class="o">=</span> <span class="n">from</span><span class="p">;</span>
+
+  <span class="c1">// Bug(898785): Due to side-effects in the evaluation of `fromIndex`</span>
+  <span class="c1">// the {from} can be out-of-bounds here, so we need to clamp {k} to</span>
+  <span class="c1">// the {elements} length. We might be reading holes / hole NaNs still</span>
+  <span class="c1">// due to that, but those will be ignored below.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="o">&gt;=</span> <span class="n">elements</span><span class="p">.</span><span class="n">length</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">elements</span><span class="p">.</span><span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="n">k</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+      <span class="k">const</span> <span class="n">element</span><span class="o">:</span> <span class="n">JSAny</span> <span class="o">=</span> <span class="n">LoadWithHoleCheck</span><span class="o">&lt;</span><span class="n">Elements</span><span class="o">&gt;</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+          <span class="n">otherwise</span> <span class="n">Hole</span><span class="p">;</span>
+
+      <span class="k">const</span> <span class="n">same</span><span class="o">:</span> <span class="n">Boolean</span> <span class="o">=</span> <span class="n">StrictEqual</span><span class="p">(</span><span class="n">searchElement</span><span class="p">,</span> <span class="n">element</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">same</span> <span class="o">==</span> <span class="n">True</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">dcheck</span><span class="p">(</span><span class="n">Is</span><span class="o">&lt;</span><span class="n">FastJSArray</span><span class="o">&gt;</span><span class="p">(</span><span class="n">array</span><span class="p">));</span>
+        <span class="k">return</span> <span class="n">k</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="n">label</span> <span class="n">Hole</span> <span class="p">{}</span>  <span class="c1">// Do nothing for holes.</span>
+
+    <span class="o">--</span><span class="n">k</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="n">dcheck</span><span class="p">(</span><span class="n">Is</span><span class="o">&lt;</span><span class="n">FastJSArray</span><span class="o">&gt;</span><span class="p">(</span><span class="n">array</span><span class="p">));</span>
+  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>lastIndexOf 구현체를 보면 TheHole을 검증하는 구문이 있다. 이처럼, builtin 함수들 중에서 엘리먼트 접근하는 경우들에 대해 TheHole을 제대로 검증하는지 훑어볼 필요가 있을 듯.</p>
+
+<p>단순한 경로의 접근들은 아마 이미 다 처리가 되어있을 듯하고… 생각치 못한 경우들(side-effect 고려 부족이라든지 최신 문법들-generator 등등…?)을 포함해서 고려해 보아야 할 듯.</p>
+
+<hr />
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">src</span><span class="o">/</span><span class="nx">builtins</span><span class="o">/</span><span class="nx">array</span><span class="p">.</span><span class="nx">tq</span>
+<span class="nx">macro</span> <span class="nx">LoadElementOrUndefined</span><span class="p">(</span><span class="nx">implicit</span> <span class="nx">context</span><span class="p">:</span> <span class="nx">Context</span><span class="p">)(</span>
+    <span class="nx">a</span><span class="p">:</span> <span class="nx">FixedArray</span><span class="p">,</span> <span class="nx">i</span><span class="p">:</span> <span class="nx">Smi</span><span class="p">):</span> <span class="nx">JSAny</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">e</span> <span class="o">=</span> <span class="nx">UnsafeCast</span><span class="o">&lt;</span><span class="p">(</span><span class="nx">JSAny</span> <span class="o">|</span> <span class="nx">TheHole</span><span class="p">)</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">objects</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+  <span class="k">return</span> <span class="nx">ReplaceTheHoleWithUndefined</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nx">macro</span> <span class="nx">LoadElementOrUndefined</span><span class="p">(</span><span class="nx">a</span><span class="p">:</span> <span class="nx">FixedDoubleArray</span><span class="p">,</span> <span class="nx">i</span><span class="p">:</span> <span class="nx">Smi</span><span class="p">):</span> <span class="nx">NumberOrUndefined</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">f</span><span class="p">:</span> <span class="nx">float64</span> <span class="o">=</span> <span class="nx">a</span><span class="p">.</span><span class="nx">floats</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">Value</span><span class="p">()</span> <span class="nx">otherwise</span> <span class="k">return</span> <span class="nx">Undefined</span><span class="p">;</span>
+  <span class="k">return</span> <span class="nx">AllocateHeapNumberWithValue</span><span class="p">(</span><span class="nx">f</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">src</span><span class="o">/</span><span class="nx">builtins</span><span class="o">/</span><span class="nx">base</span><span class="p">.</span><span class="nx">tq</span>
+<span class="nx">macro</span> <span class="nx">ReplaceTheHoleWithUndefined</span><span class="p">(</span><span class="nx">o</span><span class="p">:</span> <span class="nx">JSAny</span><span class="o">|</span><span class="nx">TheHole</span><span class="p">):</span> <span class="nx">JSAny</span> <span class="p">{</span>
+  <span class="nx">typeswitch</span> <span class="p">(</span><span class="nx">o</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="p">(</span><span class="nx">TheHole</span><span class="p">):</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nx">Undefined</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">case</span> <span class="p">(</span><span class="nx">a</span><span class="p">:</span> <span class="nx">JSAny</span><span class="p">):</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nx">a</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">src</span><span class="o">/</span><span class="nx">objects</span><span class="o">/</span><span class="nx">js</span><span class="o">-</span><span class="nx">array</span><span class="p">.</span><span class="nx">tq</span>
+  <span class="nx">macro</span> <span class="nx">LoadElementOrUndefined</span><span class="p">(</span><span class="nx">implicit</span> <span class="nx">context</span><span class="p">:</span> <span class="nx">Context</span><span class="p">)(</span><span class="nx">k</span><span class="p">:</span> <span class="nx">Smi</span><span class="p">):</span> <span class="nx">JSAny</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">LoadElementNoHole</span><span class="p">(</span><span class="nx">k</span><span class="p">)</span> <span class="nx">otherwise</span> <span class="nx">FoundHole</span><span class="p">;</span>
+    <span class="p">}</span> <span class="nx">label</span> <span class="nx">FoundHole</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nx">Undefined</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+</code></pre></div></div>
+
+<p>위 코드가 언제 쓰이는 것인지 알아보자.</p>
+
+<p>ReplaceTheHoleWithUndefined 는 LoadElementOrUndefined 에서만 쓰임.</p>
+
+<p>Array.prototype.shift 에서는 js-array.tq 의 LoadElementOrUndefined 를 사용. Array.prototype.find, Array.prototype.findIndex, Array.prototype.findLast, Array.prototype.findLastIndex 다 마찬가지인 듯.</p>
+
+<p>array.tq 의 것은 collections.tq, object-fromentries.tq 에서 array::LoadElementOrUndefined 형태로 쓰고 있는 듯.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d8&gt; let myMap = new Map([  [1, 'one'],  [2, 'two'],  [3, 'three']])         
+LoadElementOrUndefined(FixedArray), hello!
+LoadElementOrUndefined(FixedArray), hello!
+ReplaceTheHoleWithUndefined!
+ReplaceTheHoleWithUndefined!
+...
+
+d8&gt; const entries = new Map([  ['foo', 'bar'],  ['baz', 42]]);
+LoadElementOrUndefined(FixedArray), hello!
+LoadElementOrUndefined(FixedArray), hello!
+ReplaceTheHoleWithUndefined!
+ReplaceTheHoleWithUndefined!
+...
+d8&gt; const obj = Object.fromEntries(entries);
+LoadElementOrUndefined(FixedArray), hello!
+LoadElementOrUndefined(FixedArray), hello!
+ReplaceTheHoleWithUndefined!
+ReplaceTheHoleWithUndefined!
+...
+</code></pre></div></div>
+
+<p>collection의 constructor에서 쓰고 있으며 이는 Map(Set도 될 듯)의 생성자에 iterable을 인자로 줄 경우 트리거 됨 + Object.fromEntries 에서도 트리거 됨</p>
+
+<p>js-array.tq 의 LoadElementOrUndefined 는 struct FastJSArrayWitness 내에 구현되어 있음. FastJSArrayWitness가 어디서 쓰이는지 알아야 코드가 트리거되는 패스를 찾을 수 있음.</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">builtins</span><span class="o">-</span><span class="n">array</span><span class="o">-</span><span class="n">gen</span><span class="p">.</span><span class="n">cc</span>
+<span class="nf">TF_BUILTIN</span><span class="p">(</span><span class="n">ArrayPrototypePop</span><span class="p">,</span> <span class="n">CodeStubAssembler</span><span class="p">)</span> <span class="p">{</span>  <span class="k">auto</span> <span class="n">argc</span> <span class="o">=</span> <span class="n">UncheckedParameter</span><span class="o">&lt;</span><span class="n">Int32T</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Descriptor</span><span class="o">::</span><span class="n">kJSActualArgumentsCount</span><span class="p">);</span>
+  <span class="k">auto</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Parameter</span><span class="o">&lt;</span><span class="n">Context</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Descriptor</span><span class="o">::</span><span class="n">kContext</span><span class="p">);</span>
+  <span class="n">CSA_DCHECK</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">IsUndefined</span><span class="p">(</span><span class="n">Parameter</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Descriptor</span><span class="o">::</span><span class="n">kJSNewTarget</span><span class="p">)));</span>
+
+  <span class="n">CodeStubArguments</span> <span class="n">args</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">argc</span><span class="p">);</span>
+  <span class="n">TNode</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">receiver</span> <span class="o">=</span> <span class="n">args</span><span class="p">.</span><span class="n">GetReceiver</span><span class="p">();</span>
+
+  <span class="n">Label</span> <span class="n">runtime</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">Label</span><span class="o">::</span><span class="n">kDeferred</span><span class="p">);</span>
+  <span class="n">Label</span> <span class="n">fast</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+
+  <span class="c1">// Only pop in this stub if</span>
+  <span class="c1">// 1) the array has fast elements</span>
+  <span class="c1">// 2) the length is writable,</span>
+  <span class="c1">// 3) the elements backing store isn't copy-on-write,</span>
+  <span class="c1">// 4) we aren't supposed to shrink the backing store.</span>
+
+  <span class="c1">// 1) Check that the array has fast elements.</span>
+  <span class="n">Print</span><span class="p">(</span><span class="s">"TF_BUILTIN(ArrayPrototypePop)"</span><span class="p">);</span>
+  <span class="n">Print</span><span class="p">(</span><span class="s">"receiver: "</span><span class="p">,</span> <span class="n">receiver</span><span class="p">);</span>
+  <span class="n">Print</span><span class="p">(</span><span class="s">""</span><span class="p">);</span>
+  <span class="n">Print</span><span class="p">(</span><span class="s">"context: "</span><span class="p">,</span> <span class="n">context</span><span class="p">);</span>
+  <span class="n">BranchIfFastJSArray</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">fast</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">runtime</span><span class="p">);</span>
+
+    <span class="p">...</span>
+
+    <span class="n">BIND</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fast_elements</span><span class="p">);</span>
+    <span class="p">{</span>
+      <span class="n">Print</span><span class="p">(</span><span class="s">"Fast Elements !!!"</span><span class="p">);</span>
+      <span class="n">TNode</span><span class="o">&lt;</span><span class="n">FixedArray</span><span class="o">&gt;</span> <span class="n">elements_known_fixed_array</span> <span class="o">=</span> <span class="n">CAST</span><span class="p">(</span><span class="n">elements</span><span class="p">);</span>
+      <span class="n">TNode</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">value</span> <span class="o">=</span>
+          <span class="n">LoadFixedArrayElement</span><span class="p">(</span><span class="n">elements_known_fixed_array</span><span class="p">,</span> <span class="n">new_length</span><span class="p">);</span>
+      <span class="n">StoreFixedArrayElement</span><span class="p">(</span><span class="n">elements_known_fixed_array</span><span class="p">,</span> <span class="n">new_length</span><span class="p">,</span>
+                             <span class="n">TheHoleConstant</span><span class="p">());</span>
+      <span class="n">GotoIf</span><span class="p">(</span><span class="n">TaggedEqual</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">TheHoleConstant</span><span class="p">()),</span> <span class="o">&amp;</span><span class="n">return_undefined</span><span class="p">);</span>
+      <span class="n">args</span><span class="p">.</span><span class="n">PopAndReturn</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>위처럼 receiver 와 context도 출력이 됨</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>receiver: : DebugPrint: 0x2b480004a469: [JSArray]
+ - map: 0x2b4800203a79 &lt;Map(PACKED_SMI_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x2b48001cc321 &lt;JSArray[0]&gt;
+ ...
+
+context: : DebugPrint: 0x2b48001c3681: [NativeContext] in OldSpace
+ - map: 0x2b4800202179 &lt;Map&gt;
+ - type: NATIVE_CONTEXT_TYPE
+ - scope_info: 0x2b48000036b9 &lt;ScopeInfo SCRIPT_SCOPE&gt;
+ - previous: 0
+ - native_context: 0x2b48001c3681 &lt;NativeContext[270]&gt;
+ - extension: 0x2b48001d0e15 &lt;JSGlobalObject&gt;
+ - length: 270
+ - elements:
+           0: 0x2b48000036b9 &lt;ScopeInfo SCRIPT_SCOPE&gt;
+           1: 0
+           2: 0x2b48001d0e15 &lt;JSGlobalObject&gt;
+           3: 0x2b48001c3671 &lt;JSGlobalProxy&gt;
+           4: 0x2b4800049de1 &lt;Other heap object (EMBEDDER_DATA_ARRAY_TYPE)&gt;
+           5: 0x2b48000023f1 &lt;undefined&gt;
+           6: 0x2b48001cc8a1 &lt;JSFunction next (sfi = 0x2b480015bbe5)&gt;
+           7: 0x2b48001cc8bd &lt;JSFunction next (sfi = 0x2b480015bc09)&gt;
+    ...
+
+         264: 0x2b48000023f1 &lt;undefined&gt;
+         265: 0x2b48000021f1 &lt;Other heap object (WEAK_ARRAY_LIST_TYPE)&gt;
+         266: 0x2b48000035a9 &lt;Other heap object (WEAK_FIXED_ARRAY_TYPE)&gt;
+     267-269: 0x2b48000023f1 &lt;undefined&gt;
+ - microtask_queue: 0x556ff97047e0
+0x2b4800202179: [Map]
+ - type: NATIVE_CONTEXT_TYPE
+ - instance size: variable
+ - elements kind: HOLEY_ELEMENTS
+ - unused property fields: 0
+ - enum length: invalid
+ - stable_map
+ - native context: 0x2b48001c3681 &lt;NativeContext[270]&gt;
+ - prototype_validity cell: 0
+ - instance descriptors (own) #0: 0x2b48000021fd &lt;Other heap object (STRONG_DESCRIPTOR_ARRAY_TYPE)&gt;
+ - prototype: 0x2b4800002271 &lt;null&gt;
+ - dependent code: 0x2b48000021f1 &lt;Other heap object (WEAK_ARRAY_LIST_TYPE)&gt;
+ - construction counter: 0
+</code></pre></div></div>
+
+<p>위 코드에서 TheHoleConstant()를 store하는 것은 첫 번째 pop 에서는 트리거되지 않음.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d8&gt; a = [1, 2, 3, 4, 5, 6, 7];
+d8&gt; a.pop(); &lt;---- 트리거 안됨
+d8&gt; a.pop(); &lt;---- 여기서 트리거 됨
+</code></pre></div></div>
+
+<p>array literal로 생성한 의 elements는 FixedCOWArrayMap 이며 따라서 Array.prototype.pop TF_BUILTIN 함수 내에서 runtime 패스로 빠짐. 여기서 elements를 위한 fixed array가 다시 생성되며 이 때는 FixedArray의 Map을 가짐(tools/v8heapconstants.py 참고). 두 번째 pop 수행시 fast_elements 패스로 수행되며 이때 <code class="language-plaintext highlighter-rouge">StoreFixedArrayElement(elements_known_fixed_array, new_length, TheHoleConstant());</code> 가 수행됨. 즉, pop 한 element의 위치에 TheHole을 채워넣음.</p>
+
+<p>참고사항: JSArray의 length는 pop 수행 시마다 줄어들지만 elements(FixedArray)의 length는 줄어들지 않음.</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">builtins</span><span class="o">-</span><span class="n">constructor</span><span class="o">-</span><span class="n">gen</span><span class="p">.</span><span class="n">cc</span>
+<span class="nf">TF_BUILTIN</span><span class="p">(</span><span class="n">FastNewClosure</span><span class="p">,</span> <span class="n">ConstructorBuiltinsAssembler</span><span class="p">)</span> <span class="p">{</span>
+        <span class="p">...</span>
+  <span class="p">{</span>
+    <span class="c1">// Set function prototype if necessary.</span>
+    <span class="n">Label</span> <span class="n">done</span><span class="p">(</span><span class="k">this</span><span class="p">),</span> <span class="n">init_prototype</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+    <span class="n">Branch</span><span class="p">(</span><span class="n">IsFunctionWithPrototypeSlotMap</span><span class="p">(</span><span class="n">function_map</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">init_prototype</span><span class="p">,</span>
+           <span class="o">&amp;</span><span class="n">done</span><span class="p">);</span>
+
+    <span class="n">BIND</span><span class="p">(</span><span class="o">&amp;</span><span class="n">init_prototype</span><span class="p">);</span>
+    <span class="n">StoreObjectFieldRoot</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">JSFunction</span><span class="o">::</span><span class="n">kPrototypeOrInitialMapOffset</span><span class="p">,</span>
+                         <span class="n">RootIndex</span><span class="o">::</span><span class="n">kTheHoleValue</span><span class="p">);</span>
+    <span class="n">Goto</span><span class="p">(</span><span class="o">&amp;</span><span class="n">done</span><span class="p">);</span>
+    <span class="n">BIND</span><span class="p">(</span><span class="o">&amp;</span><span class="n">done</span><span class="p">);</span>
+  <span class="p">}</span>
+        <span class="p">...</span>
+</code></pre></div></div>
+
+<p>prototype에 TheHole이 쓰여지는 경우가 있는 듯? 이건 나중에 꼭 자세히 파 보자.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">compiler</span><span class="o">/</span><span class="n">js</span><span class="o">-</span><span class="n">create</span><span class="o">-</span><span class="n">lowering</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">Reduction</span> <span class="n">JSCreateLowering</span><span class="o">::</span><span class="n">ReduceJSCreateClosure</span><span class="p">(</span><span class="n">Node</span><span class="o">*</span> <span class="n">node</span><span class="p">)</span> <span class="p">{</span>
+            <span class="p">...</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">function_map</span><span class="p">.</span><span class="n">has_prototype_slot</span><span class="p">())</span> <span class="p">{</span>
+    <span class="n">a</span><span class="p">.</span><span class="n">Store</span><span class="p">(</span><span class="n">AccessBuilder</span><span class="o">::</span><span class="n">ForJSFunctionPrototypeOrInitialMap</span><span class="p">(),</span>
+            <span class="n">jsgraph</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">TheHoleConstant</span><span class="p">());</span>
+    <span class="n">STATIC_ASSERT</span><span class="p">(</span><span class="n">JSFunction</span><span class="o">::</span><span class="n">kSizeWithPrototype</span> <span class="o">==</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">kTaggedSize</span><span class="p">);</span>
+  <span class="p">}</span>
+            <span class="p">...</span>
+</code></pre></div></div>
+
+<p>compiler 에도 비슷한 루틴 존재. Implicit receiver를 나타낼 때 TheHole을 쓰는 듯</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">builtins</span><span class="o">-</span><span class="n">internal</span><span class="o">-</span><span class="n">gen</span><span class="p">.</span><span class="n">cc</span>
+  <span class="kt">void</span> <span class="nf">DictionarySpecificDelete</span><span class="p">(</span><span class="n">TNode</span><span class="o">&lt;</span><span class="n">JSReceiver</span><span class="o">&gt;</span> <span class="n">receiver</span><span class="p">,</span>
+                                <span class="n">TNode</span><span class="o">&lt;</span><span class="n">NameDictionary</span><span class="o">&gt;</span> <span class="n">properties</span><span class="p">,</span>
+                                <span class="n">TNode</span><span class="o">&lt;</span><span class="n">IntPtrT</span><span class="o">&gt;</span> <span class="n">key_index</span><span class="p">,</span>
+                                <span class="n">TNode</span><span class="o">&lt;</span><span class="n">Context</span><span class="o">&gt;</span> <span class="n">context</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Overwrite the entry itself (see NameDictionary::SetEntry).</span>
+    <span class="n">TNode</span><span class="o">&lt;</span><span class="n">Oddball</span><span class="o">&gt;</span> <span class="n">filler</span> <span class="o">=</span> <span class="n">TheHoleConstant</span><span class="p">();</span>
+    <span class="n">DCHECK</span><span class="p">(</span><span class="n">RootsTable</span><span class="o">::</span><span class="n">IsImmortalImmovable</span><span class="p">(</span><span class="n">RootIndex</span><span class="o">::</span><span class="n">kTheHoleValue</span><span class="p">));</span>
+    <span class="n">StoreFixedArrayElement</span><span class="p">(</span><span class="n">properties</span><span class="p">,</span> <span class="n">key_index</span><span class="p">,</span> <span class="n">filler</span><span class="p">,</span> <span class="n">SKIP_WRITE_BARRIER</span><span class="p">);</span>
+    <span class="n">StoreValueByKeyIndex</span><span class="o">&lt;</span><span class="n">NameDictionary</span><span class="o">&gt;</span><span class="p">(</span><span class="n">properties</span><span class="p">,</span> <span class="n">key_index</span><span class="p">,</span> <span class="n">filler</span><span class="p">,</span>
+                                         <span class="n">SKIP_WRITE_BARRIER</span><span class="p">);</span>
+    <span class="n">StoreDetailsByKeyIndex</span><span class="o">&lt;</span><span class="n">NameDictionary</span><span class="o">&gt;</span><span class="p">(</span><span class="n">properties</span><span class="p">,</span> <span class="n">key_index</span><span class="p">,</span>
+                                           <span class="n">SmiConstant</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>
+        <span class="p">...</span>
+</code></pre></div></div>
+
+<p>Dictionary의 경우에도 Delete 시 TheHole로 나타내는 듯</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">builtins</span><span class="o">-</span><span class="n">internal</span><span class="o">-</span><span class="n">gen</span><span class="p">.</span><span class="n">cc</span>
+<span class="nf">TF_BUILTIN</span><span class="p">(</span><span class="n">AdaptorWithBuiltinExitFrame</span><span class="p">,</span> <span class="n">CodeStubAssembler</span><span class="p">)</span> <span class="p">{</span>
+            <span class="p">...</span>
+  <span class="n">TailCallStub</span><span class="p">(</span><span class="n">CEntry1ArgvOnStackDescriptor</span><span class="p">{},</span>  <span class="c1">// descriptor</span>
+               <span class="n">code</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span>       <span class="c1">// standard arguments for TailCallStub</span>
+               <span class="n">argc</span><span class="p">,</span> <span class="n">c_function</span><span class="p">,</span>    <span class="c1">// register arguments</span>
+               <span class="n">TheHoleConstant</span><span class="p">(),</span>   <span class="c1">// additional stack argument 1 (padding)</span>
+               <span class="n">SmiFromInt32</span><span class="p">(</span><span class="n">argc</span><span class="p">),</span>  <span class="c1">// additional stack argument 2</span>
+               <span class="n">target</span><span class="p">,</span>              <span class="c1">// additional stack argument 3</span>
+               <span class="n">new_target</span><span class="p">);</span>         <span class="c1">// additional stack argument 4</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>AdaptorWithBuiltinExitFrame 는 low level에서만 사용되는 함수인 듯 하다. 한 번 훑어 볼 필요는 있을 듯. Adaptor?</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">builtins</span><span class="o">-</span><span class="n">iterator</span><span class="o">-</span><span class="n">gen</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">TNode</span><span class="o">&lt;</span><span class="n">FixedArray</span><span class="o">&gt;</span> <span class="n">IteratorBuiltinsAssembler</span><span class="o">::</span><span class="n">StringListFromIterable</span><span class="p">(</span>
+    <span class="n">TNode</span><span class="o">&lt;</span><span class="n">Context</span><span class="o">&gt;</span> <span class="n">context</span><span class="p">,</span> <span class="n">TNode</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">iterable</span><span class="p">)</span> <span class="p">{</span>
+            <span class="p">...</span>
+      <span class="c1">// 2. Return ? IteratorClose(iteratorRecord, error).</span>
+      <span class="n">BIND</span><span class="p">(</span><span class="o">&amp;</span><span class="n">if_exception</span><span class="p">);</span>
+      <span class="n">TNode</span><span class="o">&lt;</span><span class="n">HeapObject</span><span class="o">&gt;</span> <span class="n">message</span> <span class="o">=</span> <span class="n">GetPendingMessage</span><span class="p">();</span>
+      <span class="n">SetPendingMessage</span><span class="p">(</span><span class="n">TheHoleConstant</span><span class="p">());</span>
+      <span class="n">IteratorCloseOnException</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">iterator_record</span><span class="p">);</span>
+      <span class="n">CallRuntime</span><span class="p">(</span><span class="n">Runtime</span><span class="o">::</span><span class="n">kReThrowWithMessage</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">var_exception</span><span class="p">.</span><span class="n">value</span><span class="p">(),</span>
+                  <span class="n">message</span><span class="p">);</span>
+      <span class="n">Unreachable</span><span class="p">();</span>
+    <span class="p">}</span>
+            <span class="p">...</span>
+</code></pre></div></div>
+
+<p>https://bugs.chromium.org/p/v8/issues/detail?id=12439 때 패치된 코드 중 한 곳임.
+exception 발생 시 message가 TheHole이 되도록 할 수가 있었나 봄… 패치를 놓친 곳이 있을 지 어떨지 확인해 볼 필요가 있을 듯. PendingMessage 관련.</p>
+
+<hr />
+
+<p>빌트인 함수 구현(tq, CSA, TF_BUILTIN, …)에 배열(FixedArray), 문자열 등등에서 TheHole이 두루 쓰이는 듯. 단순히 쓰이는 것 보다 그걸 가져오는 방법에 대한 조사가 필요… 아마 이쪽은 거의 가능성이 없을 것으로 예상.</p>
+
+<p>src/codegen/code-stub-assembler.cc 에도 다수 있음. IsTheHole 과 같은 비교구문 외에도 <code class="language-plaintext highlighter-rouge">FillFixedArrayWithValue(kind, elements, IntPtrConstant(0), capacity, RootIndex::kTheHoleValue);</code> 와 같이 FixedArray를 채울 때에도 사용됨(AllocateJsArray, ExtractFixedArray 등).</p>
+
+<p>AllocateSwissNameDictionaryWithCapacity in code-stub-assembler.cc. SwissNameDictionary는 객체의 property를 dictionary 형태로 나타낼 때 쓰는 듯 하다.</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">debug</span><span class="o">/</span><span class="n">debug</span><span class="o">-</span><span class="n">interface</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">MaybeLocal</span><span class="o">&lt;</span><span class="n">v8</span><span class="o">::</span><span class="n">Value</span><span class="o">&gt;</span> <span class="n">EphemeronTable</span><span class="o">::</span><span class="n">Get</span><span class="p">(</span><span class="n">v8</span><span class="o">::</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span>
+                                          <span class="n">v8</span><span class="o">::</span><span class="n">Local</span><span class="o">&lt;</span><span class="n">v8</span><span class="o">::</span><span class="n">Value</span><span class="o">&gt;</span> <span class="n">key</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">i</span><span class="o">::</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">internal_isolate</span> <span class="o">=</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">i</span><span class="o">::</span><span class="n">Isolate</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">isolate</span><span class="p">);</span>
+  <span class="k">auto</span> <span class="n">self</span> <span class="o">=</span> <span class="n">i</span><span class="o">::</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">i</span><span class="o">::</span><span class="n">EphemeronHashTable</span><span class="o">&gt;::</span><span class="n">cast</span><span class="p">(</span><span class="n">Utils</span><span class="o">::</span><span class="n">OpenHandle</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+  <span class="n">i</span><span class="o">::</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">i</span><span class="o">::</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">internal_key</span> <span class="o">=</span> <span class="n">Utils</span><span class="o">::</span><span class="n">OpenHandle</span><span class="p">(</span><span class="o">*</span><span class="n">key</span><span class="p">);</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">internal_key</span><span class="o">-&gt;</span><span class="n">IsJSReceiver</span><span class="p">());</span>
+
+  <span class="n">i</span><span class="o">::</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">i</span><span class="o">::</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">value</span><span class="p">(</span><span class="n">self</span><span class="o">-&gt;</span><span class="n">Lookup</span><span class="p">(</span><span class="n">internal_key</span><span class="p">),</span> <span class="n">internal_isolate</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">value</span><span class="o">-&gt;</span><span class="n">IsTheHole</span><span class="p">())</span> <span class="k">return</span> <span class="p">{};</span>
+  <span class="k">return</span> <span class="n">Utils</span><span class="o">::</span><span class="n">ToLocal</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>위 코드 보고 든 생각. Map 객체(혹은 WeakMap 등등…)에서 value만 TheHole일 수 있을까? (즉, get 을 시도했을 때 value가 TheHole이 되도록)</p>
+
+<p>isolate가 TheHole 인건 무슨 의미지? debug, diagnostics 쪽에 이런 코드가 쫌 보이는데…</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">arguments</span><span class="p">.</span><span class="n">tq</span>
+<span class="k">struct</span> <span class="nc">ParameterValueIterator</span> <span class="p">{</span>
+  <span class="n">macro</span> <span class="n">Next</span><span class="p">()</span><span class="o">:</span> <span class="n">Object</span> <span class="n">labels</span> <span class="n">NoMore</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">mapped_count</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">this</span><span class="p">.</span><span class="n">mapped_count</span><span class="o">--</span><span class="p">;</span>
+      <span class="k">return</span> <span class="n">TheHole</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">current</span> <span class="o">==</span> <span class="k">this</span><span class="p">.</span><span class="n">arguments</span><span class="p">.</span><span class="n">length</span><span class="p">)</span> <span class="k">goto</span> <span class="n">NoMore</span><span class="p">;</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">arguments</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="n">current</span><span class="o">++</span><span class="p">];</span>
+  <span class="p">}</span>
+  <span class="nl">mapped_count:</span> <span class="n">intptr</span><span class="p">;</span>
+  <span class="k">const</span> <span class="n">arguments</span><span class="o">:</span> <span class="n">Arguments</span><span class="p">;</span>
+  <span class="nl">current:</span> <span class="n">intptr</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">fixed</span><span class="o">-</span><span class="n">array</span><span class="p">.</span><span class="n">tq</span>
+<span class="n">macro</span> <span class="nf">ExtractFixedArray</span><span class="p">(</span>
+    <span class="n">source</span><span class="o">:</span> <span class="n">FixedArray</span><span class="p">,</span> <span class="n">first</span><span class="o">:</span> <span class="n">intptr</span><span class="p">,</span> <span class="n">count</span><span class="o">:</span> <span class="n">intptr</span><span class="p">,</span>
+    <span class="n">capacity</span><span class="o">:</span> <span class="n">intptr</span><span class="p">)</span><span class="o">:</span> <span class="n">FixedArray</span> <span class="p">{</span>
+  <span class="c1">// TODO(turbofan): This should be optimized to use memcpy for initialization.</span>
+  <span class="k">return</span> <span class="n">NewFixedArray</span><span class="p">(</span>
+      <span class="n">capacity</span><span class="p">,</span>
+      <span class="n">IteratorSequence</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span><span class="p">(</span>
+          <span class="p">(</span><span class="o">&amp;</span><span class="n">source</span><span class="p">.</span><span class="n">objects</span><span class="p">).</span><span class="n">Iterator</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">first</span> <span class="o">+</span> <span class="n">count</span><span class="p">),</span>
+          <span class="n">ConstantIterator</span><span class="p">(</span><span class="n">TheHole</span><span class="p">)));</span>
+<span class="err">}</span>
+</code></pre></div></div>
+
+<p>torque에서 NewFixedArray는 length와 iterator를 입력으로 받고 iterator가 주는 값들로 FixedArray의 elements 값들을 초기화함. 위 처럼 TheHole로 초기화 하는 경우가 있음. FixedArray의 element에 TheHole 값이 저장되는 것은 매우 자연스러운 일임.</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">elements</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">void</span> <span class="nf">CopyPackedSmiToDoubleElements</span><span class="p">(</span><span class="n">FixedArrayBase</span> <span class="n">from_base</span><span class="p">,</span>
+                                   <span class="kt">uint32_t</span> <span class="n">from_start</span><span class="p">,</span> <span class="n">FixedArrayBase</span> <span class="n">to_base</span><span class="p">,</span>
+                                   <span class="kt">uint32_t</span> <span class="n">to_start</span><span class="p">,</span> <span class="kt">int</span> <span class="n">packed_size</span><span class="p">,</span>
+                                   <span class="kt">int</span> <span class="n">raw_copy_size</span><span class="p">)</span> <span class="p">{</span>
+                <span class="p">...</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">from_end</span> <span class="o">=</span> <span class="n">from_start</span> <span class="o">+</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">packed_size</span><span class="p">);</span>
+       <span class="n">from_start</span> <span class="o">&lt;</span> <span class="n">from_end</span><span class="p">;</span> <span class="n">from_start</span><span class="o">++</span><span class="p">,</span> <span class="n">to_start</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Object</span> <span class="n">smi</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">from_start</span><span class="p">);</span>
+    <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">smi</span><span class="p">.</span><span class="n">IsTheHole</span><span class="p">());</span>
+    <span class="n">to</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">to_start</span><span class="p">,</span> <span class="n">Smi</span><span class="o">::</span><span class="n">ToInt</span><span class="p">(</span><span class="n">smi</span><span class="p">));</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>packed 이므로 <code class="language-plaintext highlighter-rouge">DCHECK(!smi.IsTheHole());</code> 검증을 수행하는 것 같은데… TheHole 이면 무슨 문제가 있나? <a href="https://bugs.chromium.org/p/v8/issues/detail?id=7598&amp;q=hole&amp;can=1">Issue 7598: AllocateJSArray may expose the hole</a> 을 참고해보면 어떨런지? TheHole에 대해 <code class="language-plaintext highlighter-rouge">Smi::ToInt()</code>를 수행하는 것이 문제가 될런지. TODO</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">elements</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">void</span> <span class="nf">CopyDictionaryToObjectElements</span><span class="p">(</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span> <span class="n">FixedArrayBase</span> <span class="n">from_base</span><span class="p">,</span>
+                                    <span class="kt">uint32_t</span> <span class="n">from_start</span><span class="p">,</span> <span class="n">FixedArrayBase</span> <span class="n">to_base</span><span class="p">,</span>
+                                    <span class="n">ElementsKind</span> <span class="n">to_kind</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">to_start</span><span class="p">,</span>
+                                    <span class="kt">int</span> <span class="n">raw_copy_size</span><span class="p">)</span> <span class="p">{</span>
+                <span class="p">...</span>
+  <span class="n">WriteBarrierMode</span> <span class="n">write_barrier_mode</span> <span class="o">=</span> <span class="n">GetWriteBarrierMode</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="n">to_kind</span><span class="p">,</span> <span class="n">no_gc</span><span class="p">);</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">copy_size</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">InternalIndex</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">FindEntry</span><span class="p">(</span><span class="n">isolate</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="n">from_start</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">entry</span><span class="p">.</span><span class="n">is_found</span><span class="p">())</span> <span class="p">{</span>
+      <span class="n">Object</span> <span class="n">value</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">ValueAt</span><span class="p">(</span><span class="n">entry</span><span class="p">);</span>
+      <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">value</span><span class="p">.</span><span class="n">IsTheHole</span><span class="p">(</span><span class="n">isolate</span><span class="p">));</span>
+      <span class="n">to</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">to_start</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">write_barrier_mode</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="n">to</span><span class="p">.</span><span class="n">set_the_hole</span><span class="p">(</span><span class="n">isolate</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="n">to_start</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>TheHole 여부를 확인하여(<code class="language-plaintext highlighter-rouge">entry.is_found()</code>) set을 구분하고 있는데 set 의 경우는 write barrier가 필요하고 set_the_hole은 NoWriteBarrierSet를 통해 수행되는 차이가 있으므로 이를 구분하기 위한 것으로 보인다.</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">shared</span><span class="o">-</span><span class="n">function</span><span class="o">-</span><span class="n">info</span><span class="o">-</span><span class="n">inl</span><span class="p">.</span><span class="n">h</span>
+<span class="kt">void</span> <span class="n">SharedFunctionInfo</span><span class="o">::</span><span class="n">set_outer_scope_info</span><span class="p">(</span><span class="n">HeapObject</span> <span class="n">value</span><span class="p">,</span>
+                                              <span class="n">WriteBarrierMode</span> <span class="n">mode</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">is_compiled</span><span class="p">());</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">raw_outer_scope_info_or_feedback_metadata</span><span class="p">().</span><span class="n">IsTheHole</span><span class="p">());</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">value</span><span class="p">.</span><span class="n">IsScopeInfo</span><span class="p">()</span> <span class="o">||</span> <span class="n">value</span><span class="p">.</span><span class="n">IsTheHole</span><span class="p">());</span>
+  <span class="n">set_raw_outer_scope_info_or_feedback_metadata</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">shared</span><span class="o">-</span><span class="n">function</span><span class="o">-</span><span class="n">info</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">void</span> <span class="n">SharedFunctionInfo</span><span class="o">::</span><span class="n">DiscardCompiledMetadata</span><span class="p">(</span>
+            <span class="p">...</span>
+    <span class="n">DCHECK</span><span class="p">(</span><span class="n">outer_scope_info</span><span class="p">().</span><span class="n">IsScopeInfo</span><span class="p">()</span> <span class="o">||</span> <span class="n">outer_scope_info</span><span class="p">().</span><span class="n">IsTheHole</span><span class="p">());</span>
+            <span class="p">...</span>
+</code></pre></div></div>
+
+<p>SFI(SharedFunctionInfo), scope_info에도 TheHole이 저장될 수 있는 듯. 이것이 leak이 될 수가 있나…? 없을거같은데. 아마 top-level 일 때 TheHole 일 것 같은데.</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">runtime</span><span class="o">/</span><span class="n">runtime</span><span class="o">-</span><span class="n">classes</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">MaybeHandle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">DefineClass</span><span class="p">(</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span>
+                                <span class="n">Handle</span><span class="o">&lt;</span><span class="n">ClassBoilerplate</span><span class="o">&gt;</span> <span class="n">class_boilerplate</span><span class="p">,</span>
+                                <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">super_class</span><span class="p">,</span>
+                                <span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSFunction</span><span class="o">&gt;</span> <span class="n">constructor</span><span class="p">,</span>
+                                <span class="n">RuntimeArguments</span><span class="o">&amp;</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">prototype_parent</span><span class="p">;</span>
+  <span class="n">Handle</span><span class="o">&lt;</span><span class="n">HeapObject</span><span class="o">&gt;</span> <span class="n">constructor_parent</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">super_class</span><span class="o">-&gt;</span><span class="n">IsTheHole</span><span class="p">(</span><span class="n">isolate</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">prototype_parent</span> <span class="o">=</span> <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">initial_object_prototype</span><span class="p">();</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>class의 super class 등을 나타낼 때에 TheHoleㅣ 쓰이는 듯?</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">runtime</span><span class="o">/</span><span class="n">runtime</span><span class="o">-</span><span class="n">scopes</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">MaybeHandle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">LoadLookupSlot</span><span class="p">(</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">name</span><span class="p">,</span>
+                                   <span class="n">ShouldThrow</span> <span class="n">should_throw</span><span class="p">,</span>
+                                   <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;*</span> <span class="n">receiver_return</span> <span class="o">=</span> <span class="nb">nullptr</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="p">...</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">index</span> <span class="o">!=</span> <span class="n">Context</span><span class="o">::</span><span class="n">kNotFound</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">DCHECK</span><span class="p">(</span><span class="n">holder</span><span class="o">-&gt;</span><span class="n">IsContext</span><span class="p">());</span>
+    <span class="c1">// If the "property" we were looking for is a local variable, the</span>
+    <span class="c1">// receiver is the global object; see ECMA-262, 3rd., 10.1.6 and 10.2.3.</span>
+    <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">receiver</span> <span class="o">=</span> <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">factory</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">undefined_value</span><span class="p">();</span>
+    <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">value</span> <span class="o">=</span> <span class="n">handle</span><span class="p">(</span><span class="n">Context</span><span class="o">::</span><span class="n">cast</span><span class="p">(</span><span class="o">*</span><span class="n">holder</span><span class="p">).</span><span class="n">get</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="n">isolate</span><span class="p">);</span>
+    <span class="c1">// Check for uninitialized bindings.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">flag</span> <span class="o">==</span> <span class="n">kNeedsInitialization</span> <span class="o">&amp;&amp;</span> <span class="n">value</span><span class="o">-&gt;</span><span class="n">IsTheHole</span><span class="p">(</span><span class="n">isolate</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">THROW_NEW_ERROR</span><span class="p">(</span><span class="n">isolate</span><span class="p">,</span>
+                      <span class="n">NewReferenceError</span><span class="p">(</span><span class="n">MessageTemplate</span><span class="o">::</span><span class="n">kNotDefined</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span>
+                      <span class="n">Object</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">value</span><span class="o">-&gt;</span><span class="n">IsTheHole</span><span class="p">(</span><span class="n">isolate</span><span class="p">));</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">receiver_return</span><span class="p">)</span> <span class="o">*</span><span class="n">receiver_return</span> <span class="o">=</span> <span class="n">receiver</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">value</span><span class="p">;</span>
+  <span class="p">}</span>
+                    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>flag != kNeedsInitialization 이면서 value가 TheHole인 경우를 찾아보면 어떨까? LoadLookupSlot은 Runtime 함수에서 호출하며 해당 Runtime 함수들은 interpreter, compiler, src/ic/accessor-assembler.cc 등에서 호출됨(Runtime::kLoadLookupSlot[…] 으로 검색)</p>
+
+<p>추측: 여기서 Lookup이라 함은 property를 찾는 것을 의미하는 것이 아닐까. Initialization이 필요한 경우(kNeedsInitialization)에만 TheHole 값을 갖나본데. kNeedsInitialization을 피하면서 TheHole을 갖게 하면 TheHole이 leak 될 것 같기도? (물론 현재는 분석하기 전이므로 소설임) TODO</p>
+
+<p>StoreLookupSlot 도 참고</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">test</span><span class="o">/</span><span class="n">cctest</span><span class="o">/</span><span class="n">test</span><span class="o">-</span><span class="n">dictionary</span><span class="p">.</span><span class="n">cc</span>
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">class</span> <span class="nc">HashMap</span><span class="p">&gt;</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">TestHashMapDoesNotCauseGC</span><span class="p">(</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&gt;</span> <span class="n">table</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="p">...</span>
+  <span class="c1">// Calling Lookup() should not cause GC ever.</span>
+  <span class="n">CHECK</span><span class="p">(</span><span class="n">table</span><span class="o">-&gt;</span><span class="n">Lookup</span><span class="p">(</span><span class="n">key</span><span class="p">).</span><span class="n">IsTheHole</span><span class="p">(</span><span class="n">isolate</span><span class="p">));</span>
+                    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>위의 Lookup은 ObjectHashTableBase의 Lookup임(<a href="https://source.chromium.org/chromium/chromium/src/+/main:v8/src/objects/objects.cc;drc=42e75824670baadf21ece40f71b946500af1cbce;l=6335">ref</a>). 이처럼 hash table로부터 lookup 수행 결과에 대해서 TheHole 여부를 체크해야 하는데, 체크하지 않는 곳이 있을런지? TODO</p>
+
+<hr />
+
+<h2 id="the_hole-keyward-search">“the_hole” Keyward Search</h2>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">api</span><span class="o">-</span><span class="n">arguments</span><span class="p">.</span><span class="n">cc</span><span class="o">:</span>
+  <span class="mi">27</span>    <span class="c1">// It cannot escape into js as it's removed in Call below.</span>
+  <span class="mi">28</span><span class="o">:</span>   <span class="n">HeapObject</span> <span class="n">the_hole</span> <span class="o">=</span> <span class="n">ReadOnlyRoots</span><span class="p">(</span><span class="n">isolate</span><span class="p">).</span><span class="n">the_hole_value</span><span class="p">();</span>
+  <span class="mi">29</span><span class="o">:</span>   <span class="n">slot_at</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="n">kReturnValueDefaultValueIndex</span><span class="p">).</span><span class="n">store</span><span class="p">(</span><span class="n">the_hole</span><span class="p">);</span>
+  <span class="mi">30</span><span class="o">:</span>   <span class="n">slot_at</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="n">kReturnValueIndex</span><span class="p">).</span><span class="n">store</span><span class="p">(</span><span class="n">the_hole</span><span class="p">);</span>
+  <span class="mi">31</span>    <span class="nf">DCHECK</span><span class="p">((</span><span class="o">*</span><span class="n">slot_at</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="n">kHolderIndex</span><span class="p">)).</span><span class="n">IsHeapObject</span><span class="p">());</span>
+
+  <span class="mi">45</span>    <span class="c1">// It cannot escape into js as it's remove in Call below.</span>
+  <span class="mi">46</span><span class="o">:</span>   <span class="n">HeapObject</span> <span class="n">the_hole</span> <span class="o">=</span> <span class="n">ReadOnlyRoots</span><span class="p">(</span><span class="n">isolate</span><span class="p">).</span><span class="n">the_hole_value</span><span class="p">();</span>
+  <span class="mi">47</span><span class="o">:</span>   <span class="n">slot_at</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="n">kReturnValueDefaultValueIndex</span><span class="p">).</span><span class="n">store</span><span class="p">(</span><span class="n">the_hole</span><span class="p">);</span>
+  <span class="mi">48</span><span class="o">:</span>   <span class="n">slot_at</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="n">kReturnValueIndex</span><span class="p">).</span><span class="n">store</span><span class="p">(</span><span class="n">the_hole</span><span class="p">);</span>
+  <span class="mi">49</span>    <span class="nf">DCHECK</span><span class="p">((</span><span class="o">*</span><span class="n">slot_at</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="n">kHolderIndex</span><span class="p">)).</span><span class="n">IsHeapObject</span><span class="p">());</span>
+</code></pre></div></div>
+
+<p>PropertyCallbackArguments, FunctionCallbackArguments. api 쪽. TODO</p>
+
+<hr />
+
+<p>ㅁㄴㅇㄹ</p>
+
+<hr />
+
+<h2 id="pending_exception-scheduled_exception">pending_exception, scheduled_exception</h2>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="o">-</span><span class="n">inl</span><span class="p">.</span><span class="n">h</span>
+
+<span class="n">Object</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">pending_exception</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">CHECK</span><span class="p">(</span><span class="n">has_pending_exception</span><span class="p">());</span>       <span class="c1">// &lt;--- changed from DCHECK to CHECK</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">thread_local_top</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">pending_exception_</span><span class="p">.</span><span class="n">IsException</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+  <span class="k">return</span> <span class="n">thread_local_top</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">pending_exception_</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">clear_pending_exception</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">thread_local_top</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">pending_exception_</span><span class="p">.</span><span class="n">IsException</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+  <span class="n">thread_local_top</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">pending_exception_</span> <span class="o">=</span> <span class="n">ReadOnlyRoots</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="n">the_hole_value</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="n">Object</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">scheduled_exception</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">has_scheduled_exception</span><span class="p">());</span>    <span class="c1">// &lt;--- 얘는 아직 DCHECK 임 </span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">thread_local_top</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">scheduled_exception_</span><span class="p">.</span><span class="n">IsException</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+  <span class="k">return</span> <span class="n">thread_local_top</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">scheduled_exception_</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">clear_scheduled_exception</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">thread_local_top</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">scheduled_exception_</span><span class="p">.</span><span class="n">IsException</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+  <span class="n">set_scheduled_exception</span><span class="p">(</span><span class="n">ReadOnlyRoots</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="n">the_hole_value</span><span class="p">());</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>38003과 관련된 것. pending_exception이 CHECK로 패치되었다. scheduled_exception은 아직 DCHECK 인데… 얘도 결국 나중에 pending_exception 자리를 거친다면 결국 CHECK에서 걸린다는 건데…</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">h</span>
+  <span class="c1">// Promote a scheduled exception to pending. Asserts has_scheduled_exception.</span>
+  <span class="n">Object</span> <span class="nf">PromoteScheduledException</span><span class="p">();</span>
+</code></pre></div></div>
+
+<p>위는 이러한 생각을 뒷받침해주는 코드 일부(주석)</p>
+
+<h3 id="exception-처리-과정-분석">exception 처리 과정 분석</h3>
+
+<p>38003 이슈 페이지에서 언급되어있듯이 builtins-x64.cc(혹은 builtins-arm64.cc 등)에서 exception sentinel 값(RootIndex::kException)과 비교하여 익셉션 발생 여부 확인. 이후 <code class="language-plaintext highlighter-rouge">ExternalReference find_handler = ExternalReference::Create(Runtime::kUnwindAndFindExceptionHandler);</code>  구문을 통해 런타임 함수 UnwindAndFindExceptionHandler를 호출.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">runtime</span><span class="o">/</span><span class="n">runtime</span><span class="o">-</span><span class="n">internal</span><span class="p">.</span><span class="n">cc</span>
+<span class="nf">RUNTIME_FUNCTION</span><span class="p">(</span><span class="n">Runtime_UnwindAndFindExceptionHandler</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">SealHandleScope</span> <span class="n">shs</span><span class="p">(</span><span class="n">isolate</span><span class="p">);</span>
+  <span class="n">DCHECK_EQ</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">length</span><span class="p">());</span>
+  <span class="k">return</span> <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">UnwindAndFindHandler</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">Object</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">UnwindAndFindHandler</span><span class="p">()</span> <span class="p">{</span>
+					<span class="p">...</span>
+  <span class="n">Object</span> <span class="n">exception</span> <span class="o">=</span> <span class="n">pending_exception</span><span class="p">();</span>
+  					<span class="p">...</span>
+    <span class="n">clear_pending_exception</span><span class="p">();</span>
+    <span class="k">return</span> <span class="n">exception</span><span class="p">;</span>
+  <span class="p">};</span>
+					<span class="p">...</span>
+</code></pre></div></div>
+
+<p>결국 pending_exception()을 통해 익셉션을 획득함.</p>
+
+<h3 id="promotescheduledexception">PromoteScheduledException()</h3>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">Object</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">PromoteScheduledException</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">Object</span> <span class="n">thrown</span> <span class="o">=</span> <span class="n">scheduled_exception</span><span class="p">();</span>
+  <span class="n">clear_scheduled_exception</span><span class="p">();</span>
+  <span class="c1">// Re-throw the exception to avoid getting repeated error reporting.</span>
+  <span class="k">return</span> <span class="n">ReThrow</span><span class="p">(</span><span class="n">thrown</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">Object</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">ReThrow</span><span class="p">(</span><span class="n">Object</span> <span class="n">exception</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="o">!</span><span class="n">has_pending_exception</span><span class="p">());</span>
+
+  <span class="c1">// Set the exception being re-thrown.</span>
+  <span class="n">set_pending_exception</span><span class="p">(</span><span class="n">exception</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">ReadOnlyRoots</span><span class="p">(</span><span class="n">heap</span><span class="p">()).</span><span class="n">exception</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>ReThrow 에서 set_pending_exception 후에 pending_exception()을 리턴하는 것이 아닌 <code class="language-plaintext highlighter-rouge">ReadOnlyRoots(heap()).exception();</code>를 리턴하는데, <del>그러면 pending_exception() 내에서 설정된 CHECK 를 안거치는 것 아닌가?</del> 결국 machinery 코드에서 UnwindAndFindHandler를 통해 pending_exception()이 호출되어 결국 걸리는 듯…</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">h</span>
+
+<span class="cp">#define RETURN_FAILURE_IF_SCHEDULED_EXCEPTION(isolate) \
+  do {                                                 \
+    Isolate* __isolate__ = (isolate);                  \
+    DCHECK(!__isolate__-&gt;has_pending_exception());     \
+    if (__isolate__-&gt;has_scheduled_exception()) {      \
+      return __isolate__-&gt;PromoteScheduledException(); \
+    }                                                  \
+  } while (false)
+</span>
+<span class="c1">// Macros for MaybeHandle.</span>
+
+<span class="cp">#define RETURN_VALUE_IF_SCHEDULED_EXCEPTION(isolate, value) \
+  do {                                                      \
+    Isolate* __isolate__ = (isolate);                       \
+    DCHECK(!__isolate__-&gt;has_pending_exception());          \
+    if (__isolate__-&gt;has_scheduled_exception()) {           \
+      __isolate__-&gt;PromoteScheduledException();             \
+      return value;                                         \
+    }                                                       \
+  } while (false)
+</span>
+<span class="cp">#define RETURN_EXCEPTION_IF_SCHEDULED_EXCEPTION(isolate, T) \
+  RETURN_VALUE_IF_SCHEDULED_EXCEPTION(isolate, MaybeHandle&lt;T&gt;())
+</span>
+<span class="cp">#define ASSIGN_RETURN_ON_SCHEDULED_EXCEPTION_VALUE(isolate, dst, call, value) \
+  do {                                                                        \
+    Isolate* __isolate__ = (isolate);                                         \
+    if (!(call).ToLocal(&amp;dst)) {                                              \
+      DCHECK(__isolate__-&gt;has_scheduled_exception());                         \
+      __isolate__-&gt;PromoteScheduledException();                               \
+      return value;                                                           \
+    }                                                                         \
+  } while (false)
+</span>
+<span class="cp">#define RETURN_ON_SCHEDULED_EXCEPTION_VALUE(isolate, call, value) \
+  do {                                                            \
+    Isolate* __isolate__ = (isolate);                             \
+    if ((call).IsNothing()) {                                     \
+      DCHECK(__isolate__-&gt;has_scheduled_exception());             \
+      __isolate__-&gt;PromoteScheduledException();                   \
+      return value;                                               \
+    }                                                             \
+  } while (false)
+</span></code></pre></div></div>
+
+<p>~~위처럼 RETURN_어쩌구… 매크로에서도 has_scheduled_exception() 으로 이미 검증 수행 후 PromoteScheduledException()을 수행함. ~~</p>
+
+<p>ASSIGN_RETURN_ON_SCHEDULED_EXCEPTION_VALUE, RETURN_ON_SCHEDULED_EXCEPTION_VALUE 의 경우는 DCHECK로만 수행함. 더 살펴볼 필요 있음. TODO</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">source</span><span class="o">-</span><span class="n">text</span><span class="o">-</span><span class="n">module</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">bool</span> <span class="n">SourceTextModule</span><span class="o">::</span><span class="n">PrepareInstantiate</span><span class="p">(</span>
+    <span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">SourceTextModule</span><span class="o">&gt;</span> <span class="n">module</span><span class="p">,</span>
+    <span class="n">v8</span><span class="o">::</span><span class="n">Local</span><span class="o">&lt;</span><span class="n">v8</span><span class="o">::</span><span class="n">Context</span><span class="o">&gt;</span> <span class="n">context</span><span class="p">,</span> <span class="n">v8</span><span class="o">::</span><span class="n">Module</span><span class="o">::</span><span class="n">ResolveModuleCallback</span> <span class="n">callback</span><span class="p">,</span>
+    <span class="n">Module</span><span class="o">::</span><span class="n">DeprecatedResolveCallback</span> <span class="n">callback_without_import_assertions</span><span class="p">)</span> <span class="p">{</span>
+                <span class="p">...</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">callback</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">v8</span><span class="o">::</span><span class="n">Utils</span><span class="o">::</span><span class="n">ToLocal</span><span class="p">(</span><span class="n">specifier</span><span class="p">),</span>
+                    <span class="n">v8</span><span class="o">::</span><span class="n">Utils</span><span class="o">::</span><span class="n">FixedArrayToLocal</span><span class="p">(</span><span class="n">import_assertions</span><span class="p">),</span>
+                    <span class="n">v8</span><span class="o">::</span><span class="n">Utils</span><span class="o">::</span><span class="n">ToLocal</span><span class="p">(</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">Module</span><span class="o">&gt;::</span><span class="n">cast</span><span class="p">(</span><span class="n">module</span><span class="p">)))</span>
+               <span class="p">.</span><span class="n">ToLocal</span><span class="p">(</span><span class="o">&amp;</span><span class="n">api_requested_module</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">PromoteScheduledException</span><span class="p">();</span>
+        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">callback_without_import_assertions</span><span class="p">(</span>
+               <span class="n">context</span><span class="p">,</span> <span class="n">v8</span><span class="o">::</span><span class="n">Utils</span><span class="o">::</span><span class="n">ToLocal</span><span class="p">(</span><span class="n">specifier</span><span class="p">),</span>
+               <span class="n">v8</span><span class="o">::</span><span class="n">Utils</span><span class="o">::</span><span class="n">ToLocal</span><span class="p">(</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">Module</span><span class="o">&gt;::</span><span class="n">cast</span><span class="p">(</span><span class="n">module</span><span class="p">)))</span>
+               <span class="p">.</span><span class="n">ToLocal</span><span class="p">(</span><span class="o">&amp;</span><span class="n">api_requested_module</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">PromoteScheduledException</span><span class="p">();</span>
+        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+      <span class="p">}</span>
+                <span class="p">...</span>
+</code></pre></div></div>
+
+<p>PrepareInstantiate 함수 역할이 뭔지, callback이 뭐하는 앤지, callback_without_import_assertions이 뭐하는 앤지 모르겠다. 당장은 이해하기 어려움… TODO</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">synthetic</span><span class="o">-</span><span class="n">module</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">MaybeHandle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">SyntheticModule</span><span class="o">::</span><span class="n">Evaluate</span><span class="p">(</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span>
+                                              <span class="n">Handle</span><span class="o">&lt;</span><span class="n">SyntheticModule</span><span class="o">&gt;</span> <span class="n">module</span><span class="p">)</span> <span class="p">{</span>
+                <span class="p">...</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">evaluation_steps</span><span class="p">(</span>
+           <span class="n">Utils</span><span class="o">::</span><span class="n">ToLocal</span><span class="p">(</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">Context</span><span class="o">&gt;::</span><span class="n">cast</span><span class="p">(</span><span class="n">isolate</span><span class="o">-&gt;</span><span class="n">native_context</span><span class="p">())),</span>
+           <span class="n">Utils</span><span class="o">::</span><span class="n">ToLocal</span><span class="p">(</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">Module</span><span class="o">&gt;::</span><span class="n">cast</span><span class="p">(</span><span class="n">module</span><span class="p">)))</span>
+           <span class="p">.</span><span class="n">ToLocal</span><span class="p">(</span><span class="o">&amp;</span><span class="n">result</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">PromoteScheduledException</span><span class="p">();</span>
+    <span class="n">Module</span><span class="o">::</span><span class="n">RecordErrorUsingPendingException</span><span class="p">(</span><span class="n">isolate</span><span class="p">,</span> <span class="n">module</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">MaybeHandle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span><span class="p">();</span>
+  <span class="p">}</span>
+                <span class="p">...</span>
+</code></pre></div></div>
+
+<p>이 코드도 역할을 잘 모르겠음. 당장은 이해하기 어려움… TODO</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">RUNTIME_FUNCTION</span><span class="p">(</span><span class="n">Runtime_PromoteScheduledException</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">SealHandleScope</span> <span class="n">shs</span><span class="p">(</span><span class="n">isolate</span><span class="p">);</span>
+  <span class="n">DCHECK_EQ</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">length</span><span class="p">());</span>
+  <span class="k">return</span> <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">PromoteScheduledException</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>runtime 함수도 있네… 어떻게 써먹지? ㅋㅋ</p>
+
+<p>PromoteScheduledException 얘는 has_scheduled_exception() 안붙어있는 애들은 위에 언급한 애들이 전부인 듯. 다 훑어보자.</p>
+
+<h3 id="scheduled_exception">scheduled_exception()</h3>
+
+<p>scheduled_exception() 호출 전에 has_scheduled_exception() 으로 검증하지 않아야 할 듯.</p>
+
+<p>찾아봤는데 PromoteScheduledException 관련 외에는 모두 has_scheduled_exception()을 거치는 듯.</p>
+
+<h3 id="assign_return_on_scheduled_exception_value">[ASSIGN_]RETURN_ON_SCHEDULED_EXCEPTION_VALUE</h3>
+
+<p>키워드 검색 시 몇 개 안나옴, TODO</p>
+
+<h3 id="etc">etc</h3>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">clear_pending_message</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">set_pending_message</span><span class="p">(</span><span class="n">ReadOnlyRoots</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="n">the_hole_value</span><span class="p">());</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>얘도 참고하자. (얘는 IteratorCloseOnException 관련하여)</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">void</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">RestorePendingMessageFromTryCatch</span><span class="p">(</span><span class="n">v8</span><span class="o">::</span><span class="n">TryCatch</span><span class="o">*</span> <span class="n">handler</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">handler</span> <span class="o">==</span> <span class="n">try_catch_handler</span><span class="p">());</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">handler</span><span class="o">-&gt;</span><span class="n">HasCaught</span><span class="p">());</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">handler</span><span class="o">-&gt;</span><span class="n">rethrow_</span><span class="p">);</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">handler</span><span class="o">-&gt;</span><span class="n">capture_message_</span><span class="p">);</span>
+  <span class="n">Object</span> <span class="n">message</span><span class="p">(</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">Address</span><span class="o">&gt;</span><span class="p">(</span><span class="n">handler</span><span class="o">-&gt;</span><span class="n">message_obj_</span><span class="p">));</span>
+  <span class="n">DCHECK</span><span class="p">(</span><span class="n">message</span><span class="p">.</span><span class="n">IsJSMessageObject</span><span class="p">()</span> <span class="o">||</span> <span class="n">message</span><span class="p">.</span><span class="n">IsTheHole</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+  <span class="n">set_pending_message</span><span class="p">(</span><span class="n">message</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>이런 코드들을 보면 애초에 message는 TheHole이어도 된다고 가정하고 코딩한 듯 하다. 그 얘기는, 결국 TheHole값이 정상적으로 필터링 될 것임을 의미하는 것인가…</p>
+
+<hr />
+
+<h2 id="v812439">v8:12439</h2>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">builtins</span><span class="o">-</span><span class="n">temporal</span><span class="o">-</span><span class="n">gen</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">TNode</span><span class="o">&lt;</span><span class="n">FixedArray</span><span class="o">&gt;</span>
+<span class="n">TemporalBuiltinsAssembler</span><span class="o">::</span><span class="n">TemporalInstantFixedArrayFromIterable</span><span class="p">(</span>
+    <span class="n">TNode</span><span class="o">&lt;</span><span class="n">Context</span><span class="o">&gt;</span> <span class="n">context</span><span class="p">,</span> <span class="n">TNode</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">iterable</span><span class="p">)</span> <span class="p">{</span>
+            <span class="p">...</span>
+      <span class="n">BIND</span><span class="p">(</span><span class="o">&amp;</span><span class="n">if_exception</span><span class="p">);</span>
+      <span class="n">IteratorCloseOnException</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">iterator_record</span><span class="p">);</span>
+      <span class="n">CallRuntime</span><span class="p">(</span><span class="n">Runtime</span><span class="o">::</span><span class="n">kReThrow</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">var_exception</span><span class="p">.</span><span class="n">value</span><span class="p">());</span>
+      <span class="n">Unreachable</span><span class="p">();</span>
+            <span class="p">...</span>
+</code></pre></div></div>
+
+<p>IteratorCloseOnException + Runtime::kReThrow 조합인데? builtins-temporal-gen.cc 는 bug:v8:12439 때 없던 파일임. 이거 많이 수상한데…</p>
+
+<p>https://chromium.googlesource.com/v8/v8/+blame/8b663818fc311217c2cdaaab935f020578bfb7a8/src/builtins/builtins-temporal-gen.cc</p>
+
+<p>2022-01-06 에 추가됨(v8:12439는 2021-11-27, commit은 2021-12-06)</p>
+
+<p>이건 지금 바로 봐야겠다.</p>
+
+<h3 id="참고---test-코드">참고 - test 코드</h3>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">test</span><span class="o">/</span><span class="n">cctest</span><span class="o">/</span><span class="n">heap</span><span class="o">/</span><span class="n">test</span><span class="o">-</span><span class="n">heap</span><span class="p">.</span><span class="n">cc</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">CheckLeak</span><span class="p">(</span><span class="k">const</span> <span class="n">v8</span><span class="o">::</span><span class="n">FunctionCallbackInfo</span><span class="o">&lt;</span><span class="n">v8</span><span class="o">::</span><span class="n">Value</span><span class="o">&gt;&amp;</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span> <span class="o">=</span> <span class="n">CcTest</span><span class="o">::</span><span class="n">i_isolate</span><span class="p">();</span>
+  <span class="n">Object</span> <span class="n">message</span><span class="p">(</span>
+      <span class="o">*</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">Address</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">isolate</span><span class="o">-&gt;</span><span class="n">pending_message_address</span><span class="p">()));</span>
+  <span class="n">CHECK</span><span class="p">(</span><span class="n">message</span><span class="p">.</span><span class="n">IsTheHole</span><span class="p">(</span><span class="n">isolate</span><span class="p">));</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>pending message가 TheHole 인지를 확인하는 체크 코드…?</p>
+
+<h3 id="iteratorcloseonexception">IteratorCloseOnException</h3>
+
+<p>patchset 1 을 보면 src/builtins/iterator.tq 내 IteratorCloseOnException 에서 <del>Pending Message 관련 처리가 이미 추가되었음… 따라서 이미 패치가 된 것으로 봐야 할 수도. :(</del></p>
+
+<p>patchset 1 에서 추가되었다가 피드백을 받아 변경되었음. 꼼꼼히 보자.</p>
+
+<p>힌트를 얻기 위해서 commit message 등을 보고 있는데…</p>
+
+<ol>
+  <li>(from v8:12439)
+    <blockquote>
+      <p>We currently don’t do that. So when Isolate::pending_message is being cleared or overwritten by an unrelated exception inside of JS code called from IteratorCloseOnException, it can result in the original exception being combined with an unrelated message or TheHole.</p>
+    </blockquote>
+  </li>
+  <li>(from patchset 1)
+    <blockquote>
+      <p>[builtins] IteratorCloseOnException needs to preserve the pending message</p>
+    </blockquote>
+  </li>
+</ol>
+
+<p>pending message를 백업해두지 않으면 IterateCloseOnException 내에서 임의 js 수행 시 pending exception + pending message 가 overwritten 될 수 있으므로 이를 고려하여 pending message를 보존해두어야 한다는 의미.</p>
+
+<p>IterateCloseOnException 내에서 임의 js 실행, 다른 Exception 발생(+ 그 exception이 message를 TheHole로 설정하는 경우를 찾아야 함?)</p>
+
+<p>message가 TheHole일 경우 유저에게 TheHole이 leak 되는지 확인 필요(즉, 정말 보안 이슈가 있는지, 아니면 단순 메시지 출력의 오류일 뿐인지 확인 필요)</p>
+
+<p><code class="language-plaintext highlighter-rouge">SetPendingMessage(TheHole);</code>를 이미 쓰고 있는 것을 보아… TheHole이 leak되는 경우는 없는 것 같기도 하다… 쩝.</p>
+
+<p>참고: GetAndResetPendingMessage도 v8:12439 에서 추가됨</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">codegen</span><span class="o">/</span><span class="n">code</span><span class="o">-</span><span class="n">stub</span><span class="o">-</span><span class="n">assembler</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">TNode</span><span class="o">&lt;</span><span class="n">HeapObject</span><span class="o">&gt;</span> <span class="n">CodeStubAssembler</span><span class="o">::</span><span class="n">GetPendingMessage</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">TNode</span><span class="o">&lt;</span><span class="n">ExternalReference</span><span class="o">&gt;</span> <span class="n">pending_message</span> <span class="o">=</span> <span class="n">ExternalConstant</span><span class="p">(</span>
+      <span class="n">ExternalReference</span><span class="o">::</span><span class="n">address_of_pending_message</span><span class="p">(</span><span class="n">isolate</span><span class="p">()));</span>
+  <span class="k">return</span> <span class="n">UncheckedCast</span><span class="o">&lt;</span><span class="n">HeapObject</span><span class="o">&gt;</span><span class="p">(</span><span class="n">LoadFullTagged</span><span class="p">(</span><span class="n">pending_message</span><span class="p">));</span>
+<span class="p">}</span>
+<span class="kt">void</span> <span class="n">CodeStubAssembler</span><span class="o">::</span><span class="n">SetPendingMessage</span><span class="p">(</span><span class="n">TNode</span><span class="o">&lt;</span><span class="n">HeapObject</span><span class="o">&gt;</span> <span class="n">message</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">CSA_DCHECK</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">Word32Or</span><span class="p">(</span><span class="n">IsTheHole</span><span class="p">(</span><span class="n">message</span><span class="p">),</span>
+                            <span class="n">InstanceTypeEqual</span><span class="p">(</span><span class="n">LoadInstanceType</span><span class="p">(</span><span class="n">message</span><span class="p">),</span>
+                                              <span class="n">JS_MESSAGE_OBJECT_TYPE</span><span class="p">)));</span>
+  <span class="n">TNode</span><span class="o">&lt;</span><span class="n">ExternalReference</span><span class="o">&gt;</span> <span class="n">pending_message</span> <span class="o">=</span> <span class="n">ExternalConstant</span><span class="p">(</span>
+      <span class="n">ExternalReference</span><span class="o">::</span><span class="n">address_of_pending_message</span><span class="p">(</span><span class="n">isolate</span><span class="p">()));</span>
+  <span class="n">StoreFullTaggedNoWriteBarrier</span><span class="p">(</span><span class="n">pending_message</span><span class="p">,</span> <span class="n">message</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>위와 같이 GetPendingMessage, SetPendingMessage 가 v8:12439에서 추가됨.</p>
+
+<h3 id="exception-message-pending-message">exception message, pending message</h3>
+
+<p>익셉션의 메시지는 어떤 흐름을 거쳐서 js에서 접근하게 되는거지?</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">Object</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">ThrowInternal</span><span class="p">(</span><span class="n">Object</span> <span class="n">raw_exception</span><span class="p">,</span> <span class="n">MessageLocation</span><span class="o">*</span> <span class="n">location</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="p">...</span>
+  <span class="c1">// Generate the message if required.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">requires_message</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">rethrowing_message</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">MessageLocation</span> <span class="n">computed_location</span><span class="p">;</span>
+    <span class="c1">// If no location was specified we try to use a computed one instead.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">location</span> <span class="o">==</span> <span class="nb">nullptr</span> <span class="o">&amp;&amp;</span> <span class="n">ComputeLocation</span><span class="p">(</span><span class="o">&amp;</span><span class="n">computed_location</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">location</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">computed_location</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">bootstrapper</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">IsActive</span><span class="p">())</span> <span class="p">{</span>
+                    <span class="p">...</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">message_obj</span> <span class="o">=</span> <span class="n">CreateMessageOrAbort</span><span class="p">(</span><span class="n">exception</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
+      <span class="n">set_pending_message</span><span class="p">(</span><span class="o">*</span><span class="n">message_obj</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Set the exception being thrown.</span>
+  <span class="n">set_pending_exception</span><span class="p">(</span><span class="o">*</span><span class="n">exception</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">ReadOnlyRoots</span><span class="p">(</span><span class="n">heap</span><span class="p">()).</span><span class="n">exception</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">try</span> <span class="p">{</span>
+  <span class="c1">//throw new Error("");</span>
+  <span class="c1">//throw new Error();</span>
+  <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="dl">"</span><span class="s2">qwerasdf</span><span class="dl">"</span><span class="p">);</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+  <span class="o">%</span><span class="nx">DebugPrint</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>
+  <span class="o">%</span><span class="nx">SystemBreak</span><span class="p">();</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">e: </span><span class="dl">"</span><span class="p">);</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">e.stack: </span><span class="dl">"</span><span class="p">);</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">e.message: </span><span class="dl">"</span><span class="p">);</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+  <span class="o">%</span><span class="nx">DebugPrint</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>
+  <span class="o">%</span><span class="nx">SystemBreak</span><span class="p">();</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+<span class="p">}</span>
+
+</code></pre></div></div>
+
+<p>아래와 같은 js 코드를 이용하여 Throw를 통해 익셉션을 발생시키면 위의 ThrowInternal 코드가 수행됨. 이해가 잘 안되는 점은, CreateMessageOrAbort 를 통해 JSMessageObject 객체를 생성하고 이를 set_pending_message(…)를 통해 설정하는 것이 catch를 통해 잡은 e의 message 프로퍼티와 무관해보인다는 점임. 실제로, CreateMessageOrAbort 및 set_pending_message 구문을 변경하거나 주석처리해도 message 프로퍼티에 저장되는 값은 변화가 없음.</p>
+
+<p>지금 드는 생각 하나. message 프로퍼티는 Error 클래스의 생성자에서 발생하는 것 같다. 그렇다면, pending_message의 역할은 대체 뭐지?</p>
+
+<h4 id="throw-를-통한-익셉션-처리-과정-및-분석">throw 를 통한 익셉션 처리 과정 및 분석</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DEBUG:: v8::internal::Object v8::internal::Isolate::ThrowInternal(v8::internal::Object, v8::internal::MessageLocation *)
+--- raw_exception ---
+0x17fb0004a631: [JS_ERROR_TYPE]
+ - map: 0x17fb00207bc9 &lt;Map(HOLEY_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x17fb001c5cd1 &lt;Object map = 0x17fb002028d1&gt;
+ - elements: 0x17fb00002269 &lt;FixedArray[0]&gt; [HOLEY_ELEMENTS]
+ - properties: 0x17fb00002269 &lt;FixedArray[0]&gt;
+ - All own properties (excluding elements): {
+    0x17fb000057c1: [String] in ReadOnlySpace: #stack: 0x17fb0014432d &lt;AccessorInfo&gt; (const accessor descriptor), location: descriptor
+    0x17fb0000501d: [String] in ReadOnlySpace: #message: 0x17fb001d3591 &lt;String[8]: #qwerasdf&gt; (const data field 0), location: in-object
+    0x17fb00005bf1 &lt;Symbol: (error_stack_symbol)&gt;: 0x17fb0004a671 &lt;FixedArray[1]&gt; (const data field 1), location: in-object
+ }
+</code></pre></div></div>
+
+<p>ThrowInternal의 첫 번째 인자 raw_exception 이 js 코드에서 throw로 던진 객체임. 문자열을 던졌을 경우 문자열 객체가 raw_exception에 들어가며 <code class="language-plaintext highlighter-rouge">new Error("qwerasdf")</code>를 던졌을 경우 JS_ERROR_TYPE 객체가 들어감. 위 로그에서는 JS_ERROR_TYPE 객체의 message 프로퍼티에 문자열 “qwerasdf”가 들어있는 것을 확인할 수 있음. 즉, 던질 객체가 생성될 때 이미 message 프로퍼티에 문자열이 저장됨.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">accessors</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">void</span> <span class="n">Accessors</span><span class="o">::</span><span class="n">ArrayLengthSetter</span><span class="p">(</span>
+    <span class="n">v8</span><span class="o">::</span><span class="n">Local</span><span class="o">&lt;</span><span class="n">v8</span><span class="o">::</span><span class="n">Name</span><span class="o">&gt;</span> <span class="n">name</span><span class="p">,</span> <span class="n">v8</span><span class="o">::</span><span class="n">Local</span><span class="o">&lt;</span><span class="n">v8</span><span class="o">::</span><span class="n">Value</span><span class="o">&gt;</span> <span class="n">val</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">v8</span><span class="o">::</span><span class="n">PropertyCallbackInfo</span><span class="o">&lt;</span><span class="n">v8</span><span class="o">::</span><span class="n">Boolean</span><span class="o">&gt;&amp;</span> <span class="n">info</span><span class="p">)</span> <span class="p">{</span>   
+                    <span class="p">...</span>
+  <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">length_obj</span> <span class="o">=</span> <span class="n">Utils</span><span class="o">::</span><span class="n">OpenHandle</span><span class="p">(</span><span class="o">*</span><span class="n">val</span><span class="p">);</span>
+                    <span class="p">...</span>
+  <span class="kt">uint32_t</span> <span class="n">length</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">JSArray</span><span class="o">::</span><span class="n">AnythingToArrayLength</span><span class="p">(</span><span class="n">isolate</span><span class="p">,</span> <span class="n">length_obj</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">length</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">OptionalRescheduleException</span><span class="p">(</span><span class="nb">false</span><span class="p">);</span>
+    <span class="k">return</span><span class="p">;</span>
+  <span class="p">}</span>
+                    <span class="p">...</span>
+
+<span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">objects</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">bool</span> <span class="n">JSArray</span><span class="o">::</span><span class="n">AnythingToArrayLength</span><span class="p">(</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span>
+                                    <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">length_object</span><span class="p">,</span>
+                                    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">output</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="p">...</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">uint32_v</span><span class="o">-&gt;</span><span class="n">Number</span><span class="p">()</span> <span class="o">!=</span> <span class="n">number_v</span><span class="o">-&gt;</span><span class="n">Number</span><span class="p">())</span> <span class="p">{</span>
+    <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">exception</span> <span class="o">=</span>
+        <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">factory</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">NewRangeError</span><span class="p">(</span><span class="n">MessageTemplate</span><span class="o">::</span><span class="n">kInvalidArrayLength</span><span class="p">);</span>
+    <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">Throw</span><span class="p">(</span><span class="o">*</span><span class="n">exception</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+  <span class="p">}</span>
+                    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>Throw를 수행하는 한 예임. <code class="language-plaintext highlighter-rouge">a = [1, 2, 3]; a.length = "asdf";</code> 와 같이 수행하면 <code class="language-plaintext highlighter-rouge">"Invalid array length"</code> 문자열이 포함된 에러 객체가 생성되는 과정임.</p>
+
+<p>던질 객체의 message 프로퍼티에 저장되는 메시지와 pending_message는 다른 개념인가보다. pending_message에 저장되는 JSMessageObject는 콘솔에 출력되는 그 문자열을 의미하는 듯…</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code>      <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">message_obj</span> <span class="o">=</span> <span class="n">CreateMessageOrAbort</span><span class="p">(</span><span class="n">exception</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
+      <span class="n">set_pending_message</span><span class="p">(</span><span class="o">*</span><span class="n">message_obj</span><span class="p">);</span>
+</code></pre></div></div>
+<p>ThrowInternal의 raw_exception은 <code class="language-plaintext highlighter-rouge">Handle&lt;Object&gt; exception(raw_exception, this);</code> 핸들 형태의 exception으로 감싸진 후 CreateMessageOrAbort 함수로 전달되고 그 결과가 set_pending_message에 전달됨.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSMessageObject</span><span class="o">&gt;</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">CreateMessageOrAbort</span><span class="p">(</span>
+    <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">exception</span><span class="p">,</span> <span class="n">MessageLocation</span><span class="o">*</span> <span class="n">location</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSMessageObject</span><span class="o">&gt;</span> <span class="n">message_obj</span> <span class="o">=</span> <span class="n">CreateMessage</span><span class="p">(</span><span class="n">exception</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
+
+<span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSMessageObject</span><span class="o">&gt;</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">CreateMessage</span><span class="p">(</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">exception</span><span class="p">,</span>
+                                               <span class="n">MessageLocation</span><span class="o">*</span> <span class="n">location</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="p">...</span>
+  <span class="k">return</span> <span class="n">MessageHandler</span><span class="o">::</span><span class="n">MakeMessageObject</span><span class="p">(</span>
+      <span class="k">this</span><span class="p">,</span> <span class="n">MessageTemplate</span><span class="o">::</span><span class="n">kUncaughtException</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">exception</span><span class="p">,</span>
+      <span class="n">stack_trace_object</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">messages</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSMessageObject</span><span class="o">&gt;</span> <span class="n">MessageHandler</span><span class="o">::</span><span class="n">MakeMessageObject</span><span class="p">(</span>
+    <span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span> <span class="n">MessageTemplate</span> <span class="n">message</span><span class="p">,</span> <span class="k">const</span> <span class="n">MessageLocation</span><span class="o">*</span> <span class="n">location</span><span class="p">,</span>
+    <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">argument</span><span class="p">,</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">FixedArray</span><span class="o">&gt;</span> <span class="n">stack_frames</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="p">...</span>
+  <span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSMessageObject</span><span class="o">&gt;</span> <span class="n">message_obj</span> <span class="o">=</span> <span class="n">factory</span><span class="o">-&gt;</span><span class="n">NewJSMessageObject</span><span class="p">(</span>
+      <span class="n">message</span><span class="p">,</span> <span class="n">argument</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">shared_info</span><span class="p">,</span> <span class="n">bytecode_offset</span><span class="p">,</span>
+      <span class="n">script_handle</span><span class="p">,</span> <span class="n">stack_frames_handle</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="n">message_obj</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">src</span><span class="o">/</span><span class="n">heap</span><span class="o">/</span><span class="n">factory</span><span class="p">.</span><span class="n">cc</span>
+<span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSMessageObject</span><span class="o">&gt;</span> <span class="n">Factory</span><span class="o">::</span><span class="n">NewJSMessageObject</span><span class="p">(</span>
+    <span class="n">MessageTemplate</span> <span class="n">message</span><span class="p">,</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">argument</span><span class="p">,</span> <span class="kt">int</span> <span class="n">start_position</span><span class="p">,</span>
+    <span class="kt">int</span> <span class="n">end_position</span><span class="p">,</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">SharedFunctionInfo</span><span class="o">&gt;</span> <span class="n">shared_info</span><span class="p">,</span>
+    <span class="kt">int</span> <span class="n">bytecode_offset</span><span class="p">,</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Script</span><span class="o">&gt;</span> <span class="n">script</span><span class="p">,</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">stack_frames</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="n">message_object_map</span><span class="p">();</span>
+  <span class="n">JSMessageObject</span> <span class="n">message_obj</span> <span class="o">=</span>
+      <span class="n">JSMessageObject</span><span class="o">::</span><span class="n">cast</span><span class="p">(</span><span class="n">New</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">AllocationType</span><span class="o">::</span><span class="n">kYoung</span><span class="p">));</span>
+  <span class="n">DisallowGarbageCollection</span> <span class="n">no_gc</span><span class="p">;</span>
+                <span class="p">...</span>
+  <span class="n">message_obj</span><span class="p">.</span><span class="n">set_argument</span><span class="p">(</span><span class="o">*</span><span class="n">argument</span><span class="p">,</span> <span class="n">SKIP_WRITE_BARRIER</span><span class="p">);</span>
+                <span class="p">...</span>
+  <span class="k">return</span> <span class="n">handle</span><span class="p">(</span><span class="n">message_obj</span><span class="p">,</span> <span class="n">isolate</span><span class="p">());</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>CreateMessageOrAbort에 이어 CreateMessage 호출, MakeMessageObject 호출, NewJSMessageObject 호출, exception이 <code class="language-plaintext highlighter-rouge">message_obj.set_argument(*argument, SKIP_WRITE_BARRIER);</code>를 통해 argument로 설정됨.</p>
+
+<p>set_pending_message에 저장된 것은 pending_message() 를 통해 쓰이는데 <code class="language-plaintext highlighter-rouge">void BaselineCompiler::VisitSetPendingMessage()</code> 랑 <code class="language-plaintext highlighter-rouge">TNode&lt;HeapObject&gt; CodeStubAssembler::GetPendingMessage()</code>도 봐야하나… 머리가 복잡하다. GetPendingMessage()는 봐야 할 듯… 쓰이는 곳이 많지는 않네. CSA 런타임에서 쓰이는 듯.</p>
+
+<h4 id="getpendingmessage">GetPendingMessage()</h4>
+
+<p>생각해보니 GetPendingMessage()는 v8:12439 에서 생긴 함수임. GetPendingMessage()가 쓰이는 곳들 중에 유의미하게 살펴볼 곳은 없는 듯…</p>
+
+<h4 id="pending_message">pending_message()</h4>
+
+<p>void BaselineCompiler::VisitSetPendingMessage() 신경 써야 할까?</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">void</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">ReportPendingMessages</span><span class="p">()</span> <span class="p">{</span>
+					<span class="p">...</span>
+  <span class="n">Object</span> <span class="n">message_obj</span> <span class="o">=</span> <span class="n">pending_message</span><span class="p">();</span>
+  <span class="n">clear_pending_message</span><span class="p">();</span>
+  					<span class="p">...</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">message_obj</span><span class="p">.</span><span class="n">IsTheHole</span><span class="p">(</span><span class="k">this</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">should_report_exception</span><span class="p">)</span> <span class="p">{</span>
+  					<span class="p">...</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>TheHole 여부 체크함.</p>
+
+<hr />
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">execution</span><span class="o">/</span><span class="n">isolate</span><span class="p">.</span><span class="n">cc</span>
+<span class="kt">bool</span> <span class="n">Isolate</span><span class="o">::</span><span class="n">PropagatePendingExceptionToExternalTryCatch</span><span class="p">(</span>
+    <span class="n">ExceptionHandlerType</span> <span class="n">top_handler</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">Object</span> <span class="n">exception</span> <span class="o">=</span> <span class="n">pending_exception</span><span class="p">();</span>
+  					<span class="p">...</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">is_catchable_by_javascript</span><span class="p">(</span><span class="n">exception</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">SetTerminationOnExternalTryCatch</span><span class="p">();</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+  					<span class="p">...</span>
+    <span class="c1">// Propagate to the external try-catch only if we got an actual message.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">has_pending_message</span><span class="p">())</span> <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="n">handler</span><span class="o">-&gt;</span><span class="n">message_obj_</span> <span class="o">=</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="kt">void</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">pending_message</span><span class="p">().</span><span class="n">ptr</span><span class="p">());</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>has_pending_message()를 통해 TheHole 체크함.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">objects</span><span class="o">/</span><span class="n">objects</span><span class="p">.</span><span class="n">cc</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">MoveMessageToPromise</span><span class="p">(</span><span class="n">Isolate</span><span class="o">*</span> <span class="n">isolate</span><span class="p">,</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSPromise</span><span class="o">&gt;</span> <span class="n">promise</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">isolate</span><span class="o">-&gt;</span><span class="n">has_pending_message</span><span class="p">())</span> <span class="k">return</span><span class="p">;</span>
+
+  <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">message</span> <span class="o">=</span> <span class="n">handle</span><span class="p">(</span><span class="n">isolate</span><span class="o">-&gt;</span><span class="n">pending_message</span><span class="p">(),</span> <span class="n">isolate</span><span class="p">);</span>
+  <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Symbol</span><span class="o">&gt;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">factory</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">promise_debug_message_symbol</span><span class="p">();</span>
+  <span class="n">Object</span><span class="o">::</span><span class="n">SetProperty</span><span class="p">(</span><span class="n">isolate</span><span class="p">,</span> <span class="n">promise</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">StoreOrigin</span><span class="o">::</span><span class="n">kMaybeKeyed</span><span class="p">,</span>
+                      <span class="n">Just</span><span class="p">(</span><span class="n">ShouldThrow</span><span class="o">::</span><span class="n">kThrowOnError</span><span class="p">))</span>
+      <span class="p">.</span><span class="n">Assert</span><span class="p">();</span>
+
+  <span class="c1">// The message object for a rejected promise was only stored for this purpose.</span>
+  <span class="c1">// Clear it, otherwise we might leak memory.</span>
+  <span class="n">isolate</span><span class="o">-&gt;</span><span class="n">clear_pending_message</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>has_pending_message()를 통해 TheHole 체크함.</p>
+
+<p>이런…</p>
+
+<h3 id="temporal-대상-트리거-코드-구현">Temporal 대상 트리거 코드 구현</h3>
+
+<p>버그는 버그니까… 라는 생각으로 트리거 코드 한 번 구현해보자. 자신감도 쌓을 겸.</p>
+
+<ol>
+  <li>Temporal 에서 해당 코드 트리거되도록 poc 작성</li>
+  <li>IteratorCloseOnException 트리거 확인</li>
+</ol>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">flags</span><span class="o">/</span><span class="n">flag</span><span class="o">-</span><span class="n">definitions</span><span class="p">.</span><span class="n">h</span>
+<span class="c1">// Features that are still work in progress (behind individual flags).</span>
+<span class="cp">#define HARMONY_INPROGRESS_BASE(V)                                             \
+  V(harmony_weak_refs_with_cleanup_some,                                       \
+    "harmony weak references with FinalizationRegistry.prototype.cleanupSome") \
+  V(harmony_import_assertions, "harmony import assertions")                    \
+  V(harmony_temporal, "Temporal")                                              \
+  V(harmony_shadow_realm, "harmony ShadowRealm")                               \
+  V(harmony_struct, "harmony structs and shared structs")
+</span></code></pre></div></div>
+
+<p>Temporal은 아직 미완성된 feature라 –harmony-temoral 플래그가 필요함. <del>(근데 크롬 개발자도구에선 되던데? 뭐지…)</del> <a href="https://tc39.es/proposal-temporal/docs/timezone.html#getPossibleInstantsFor">tc39 페이지</a>에서만 사용 가능했던 것. Polyfill 인 듯.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">init</span><span class="o">/</span><span class="n">bootstrapper</span><span class="p">.</span><span class="n">cc</span>
+  <span class="c1">// The TemporalInsantFixedArrayFromIterable functions is created but not</span>
+  <span class="c1">// exposed, as it is used internally by GetPossibleInstantsFor.</span>
+  <span class="p">{</span>
+    <span class="n">Handle</span><span class="o">&lt;</span><span class="n">JSFunction</span><span class="o">&gt;</span> <span class="n">func</span> <span class="o">=</span> <span class="n">SimpleCreateFunction</span><span class="p">(</span>
+        <span class="n">isolate_</span><span class="p">,</span>
+        <span class="n">factory</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">InternalizeUtf8String</span><span class="p">(</span>
+            <span class="s">"TemporalInstantFixedArrayFromIterable"</span><span class="p">),</span>
+        <span class="n">Builtin</span><span class="o">::</span><span class="n">kTemporalInstantFixedArrayFromIterable</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+    <span class="n">native_context</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">set_temporal_instant_fixed_array_from_iterable</span><span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">);</span>
+  <span class="p">}</span>
+</code></pre></div></div>
+
+<p>GetPossibleInstantsFor 에서 내부적으로만 사용한다 함.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d8&gt; tz.getPossibleInstantsFor("asdf");
+
+
+#
+# Fatal error in , line 0
+# unimplemented code
+#
+#
+#
+#FailureMessage Object: 0x7ffc881e5230
+==== C stack trace ===============================
+
+    ./x64.release/d8(+0x100eb33) [0x556348401b33]
+    ./x64.release/d8(+0x100e3eb) [0x5563484013eb]
+    ./x64.release/d8(+0x1004805) [0x5563483f7805]
+    ./x64.release/d8(+0x45bf09) [0x55634784ef09]
+    [0x5562cff0d9f8]
+Trace/breakpoint trap (core dumped)
+everyyy@baddell:/work/v8/220317_master/v8/out.gn$ 
+</code></pre></div></div>
+
+<p>왓더…</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">src</span><span class="o">/</span><span class="n">builtins</span><span class="o">/</span><span class="n">builtins</span><span class="o">-</span><span class="n">temporal</span><span class="p">.</span><span class="n">cc</span>
+<span class="cp">#define TO_BE_IMPLEMENTED(id)   \
+  BUILTIN_NO_RCS(id) {          \
+    HandleScope scope(isolate); \
+    UNIMPLEMENTED();            \
+  }
+</span>  					<span class="p">...</span>
+<span class="cm">/* Temporal #sec-temporal.timezone.prototype.getpossibleinstantsfor */</span>
+<span class="n">TO_BE_IMPLEMENTED</span><span class="p">(</span><span class="n">TemporalTimeZonePrototypeGetPossibleInstantsFor</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>아직 미구현 상태… 나중에 구현 풀리면 그때 해보자. TODO</p>
+
+
+</article>
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="center">
+  <div class="measure">
+    <small>
+      Theme crafted with &lt;3 by <a href="https://johno.com/">John Otander</a> (<a href="https://twitter.com/4lpine">@4lpine</a>).<br>
+      &lt;/&gt; available on <a href="https://github.com/johno/pixyll">GitHub</a>.
+    </small>
+  </div>
+</footer>
+
+<script type="text/javascript">
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js")
+    }
+</script>
+
+</body>
+</html>
